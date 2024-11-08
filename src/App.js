@@ -1,12 +1,12 @@
 // src/App.js
 import React from 'react';
-import TestComponent from './components/TestComponent';
+import Game from './components/Game';
 
 function App() {
   return (
     <div>
-      <h1>Frontend and Backend Connection Test</h1>
-      <TestComponent />
+      <h1>Blackjack Game</h1>
+      <Game />
     </div>
   );
 }
