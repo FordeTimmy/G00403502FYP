@@ -101,44 +101,41 @@ const Game = () => {
     setBet(betAmount);
   };
 
-  // Player draws a new card
-  // Player draws a new card
-const hit = () => {
-    if (gameStatus !== 'Playing...') return;
-  
-    const newDeck = [...deck];
-    const newCard = newDeck.pop();
-  
-    if (isSplit) {
-      if (currentHand === 1) {
-        const newHand1 = [...playerHand1, newCard];
-        setPlayerHand1(newHand1);
-        if (calculateHandValue(newHand1) > 21) {
-          setGameStatus('Hand 1 Bust! Moving to Hand 2...');
-          setCurrentHand(2); // Move to Hand 2
-        }
-      } else {
-        const newHand2 = [...playerHand2, newCard];
-        setPlayerHand2(newHand2);
-        setDeck(newDeck);
-        if (calculateHandValue(newHand2) > 21) {
-          setGameStatus('Hand 2 Bust! Dealer wins.');
-        } else {
-          setGameStatus('Playing Hand 2...');
-        }
+  const hit = () => {
+  if (gameStatus !== 'Playing...') return;
+
+  const newDeck = [...deck];
+  const newCard = newDeck.pop();
+
+  if (isSplit) {
+    if (currentHand === 1) {
+      const newHand1 = [...playerHand1, newCard];
+      setPlayerHand1(newHand1);
+      setDeck(newDeck);
+      if (calculateHandValue(newHand1) > 21) {
+        setGameStatus('Hand 1 Bust! Moving to Hand 2...');
+        setCurrentHand(2); // Move to Hand 2 after Hand 1 busts
       }
     } else {
-      // If not split, handle hit normally
-      const newPlayerHand = [...playerHand, newCard];
-      setPlayerHand(newPlayerHand);
+      const newHand2 = [...playerHand2, newCard];
+      setPlayerHand2(newHand2);
       setDeck(newDeck);
-  
-      const playerTotal = calculateHandValue(newPlayerHand);
-      if (playerTotal > 21) {
-        setGameStatus('Player busts! Dealer wins.');
+      if (calculateHandValue(newHand2) > 21) {
+        setGameStatus('Hand 2 Bust! Dealer wins.');
       }
     }
-  };
+  } else {
+    // If not split, handle hit normally
+    const newPlayerHand = [...playerHand, newCard];
+    setPlayerHand(newPlayerHand);
+    setDeck(newDeck);
+
+    const playerTotal = calculateHandValue(newPlayerHand);
+    if (playerTotal > 21) {
+      setGameStatus('Player busts! Dealer wins.');
+    }
+  }
+};
 
   // Dealer's turn to draw cards
   const dealerTurn = () => {
