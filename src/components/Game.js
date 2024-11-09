@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-// Deck creation and shuffling logic
+// Creating the deck and shuffling logic
 const createDeck = () => {
   const suits = ['♠', '♥', '♣', '♦'];
   const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -17,7 +17,7 @@ const createDeck = () => {
 // Function to get card value
 const getCardValue = (card) => {
   if (['J', 'Q', 'K'].includes(card.value)) return 10;
-  if (card.value === 'A') return 11; // Adjust Ace later
+  if (card.value === 'A') return 11; 
   return parseInt(card.value);
 };
 
@@ -55,24 +55,10 @@ const Game = () => {
 
   // Function to check if the player can split
   const canSplit = () => {
-    if (playerHand.length !== 2) {
-      return false; // Prevents errors when playerHand doesn't have exactly 2 cards
-    }
-    
-    const canSplitCondition = (
-      getCardValue(playerHand[0]) === getCardValue(playerHand[1]) && 
-      bet <= currency
-    );
-    
-    console.log("Player Hand:", playerHand);
-    console.log("Card Values:", getCardValue(playerHand[0]), getCardValue(playerHand[1]));
-    console.log("Bet:", bet);
-    console.log("Currency:", currency);
-    console.log("Can Split:", canSplitCondition);
-    
-    return canSplitCondition;
+    return playerHand.length === 2 &&
+           getCardValue(playerHand[0]) === getCardValue(playerHand[1]) &&
+           bet <= currency;
   };
-  
 
   // Function to place a bet and start a new game
   const placeBet = (amount) => {
@@ -83,7 +69,6 @@ const Game = () => {
       alert("Insufficient funds or invalid bet amount.");
     }
   };
-  
 
   // Function to start a new game
   const startGame = (betAmount) => {
@@ -101,43 +86,49 @@ const Game = () => {
     setBet(betAmount);
   };
 
+  // Player draws a new card
   const hit = () => {
-  if (gameStatus !== 'Playing...') return;
+    if (gameStatus !== 'Playing...') return;
 
-  const newDeck = [...deck];
-  const newCard = newDeck.pop();
+    const newDeck = [...deck];
+    const newCard = newDeck.pop();
 
-  if (isSplit) {
-    if (currentHand === 1) {
-      const newHand1 = [...playerHand1, newCard];
-      setPlayerHand1(newHand1);
-      setDeck(newDeck);
-      if (calculateHandValue(newHand1) > 21) {
-        setGameStatus('Hand 1 Bust! Moving to Hand 2...');
-        setCurrentHand(2); // Move to Hand 2 after Hand 1 busts
+    if (isSplit) {
+      if (currentHand === 1) {
+        const newHand1 = [...playerHand1, newCard];
+        setPlayerHand1(newHand1);
+        setDeck(newDeck);
+
+        if (calculateHandValue(newHand1) > 21) {
+          setGameStatus('Hand 1 Bust! Moving to Hand 2...');
+          setCurrentHand(2); // Move to Hand 2 after Hand 1 busts or stands
+        } else {
+          setGameStatus('Playing Hand 1...');
+        }
+      } else {
+        const newHand2 = [...playerHand2, newCard];
+        setPlayerHand2(newHand2);
+        setDeck(newDeck);
+
+        if (calculateHandValue(newHand2) > 21) {
+          setGameStatus('Hand 2 Bust! Dealer wins.');
+        } else {
+          setGameStatus('Playing Hand 2...');
+        }
       }
     } else {
-      const newHand2 = [...playerHand2, newCard];
-      setPlayerHand2(newHand2);
+      const newPlayerHand = [...playerHand, newCard];
+      setPlayerHand(newPlayerHand);
       setDeck(newDeck);
-      if (calculateHandValue(newHand2) > 21) {
-        setGameStatus('Hand 2 Bust! Dealer wins.');
+
+      const playerTotal = calculateHandValue(newPlayerHand);
+      if (playerTotal > 21) {
+        setGameStatus('Player busts! Dealer wins.');
       }
     }
-  } else {
-    // If not split, handle hit normally
-    const newPlayerHand = [...playerHand, newCard];
-    setPlayerHand(newPlayerHand);
-    setDeck(newDeck);
+  };
 
-    const playerTotal = calculateHandValue(newPlayerHand);
-    if (playerTotal > 21) {
-      setGameStatus('Player busts! Dealer wins.');
-    }
-  }
-};
-
-  // Dealer's turn to draw cards
+  // Dealer's turn to play
   const dealerTurn = () => {
     let newDeck = [...deck];
     let newDealerHand = [...dealerHand];
@@ -150,31 +141,65 @@ const Game = () => {
     setDealerHand(newDealerHand);
     setDeck(newDeck);
 
-    const playerTotal = calculateHandValue(playerHand);
     const dealerTotal = calculateHandValue(newDealerHand);
+    const hand1Total = calculateHandValue(playerHand1);
+    const hand2Total = calculateHandValue(playerHand2);
 
-    if (dealerTotal > 21 || playerTotal > dealerTotal) {
-      setCurrency(currency + bet * 2); // Win payout
-      setGameStatus('Player wins!');
-    } else if (dealerTotal > playerTotal) {
-      setGameStatus('Dealer wins.');
+    // Determine result for each hand if split, otherwise single hand
+    if (isSplit) {
+      let resultMessage = '';
+
+      if (hand1Total > 21) {
+        resultMessage += 'Hand 1 Bust! Dealer wins. ';
+      } else if (dealerTotal > 21 || hand1Total > dealerTotal) {
+        resultMessage += 'Hand 1 Wins! ';
+        setCurrency(currency + bet * 2);
+      } else if (dealerTotal === hand1Total) {
+        resultMessage += 'Hand 1 Push. ';
+        setCurrency(currency + bet);
+      } else {
+        resultMessage += 'Dealer wins Hand 1. ';
+      }
+
+      if (hand2Total > 21) {
+        resultMessage += 'Hand 2 Bust! Dealer wins.';
+      } else if (dealerTotal > 21 || hand2Total > dealerTotal) {
+        resultMessage += 'Hand 2 Wins!';
+        setCurrency(currency + bet * 2);
+      } else if (dealerTotal === hand2Total) {
+        resultMessage += 'Hand 2 Push.';
+        setCurrency(currency + bet);
+      } else {
+        resultMessage += 'Dealer wins Hand 2.';
+      }
+
+      setGameStatus(resultMessage);
     } else {
-      setCurrency(currency + bet); // Push payout
-      setGameStatus('It\'s a draw.');
+      const playerTotal = calculateHandValue(playerHand);
+      if (playerTotal > 21) {
+        setGameStatus('Player busts! Dealer wins.');
+      } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+        setGameStatus('Player wins!');
+        setCurrency(currency + bet * 2);
+      } else if (dealerTotal === playerTotal) {
+        setGameStatus('Push.');
+        setCurrency(currency + bet);
+      } else {
+        setGameStatus('Dealer wins.');
+      }
     }
   };
 
-  // Player stands and moves to the next hand if split
-const stand = () => {
-  if (gameStatus === 'Playing...') {
-    if (isSplit && currentHand === 1) {
-      setGameStatus('Playing Hand 2...');
-      setCurrentHand(2); // Switch to the second hand
-    } else {
-      dealerTurn(); // End game if both hands have been played or if not split
+  const stand = () => {
+    if (gameStatus === 'Playing...') {
+      if (isSplit && currentHand === 1) {
+        setGameStatus('Playing Hand 2...');
+        setCurrentHand(2); // Switch to the second hand
+      } else {
+        dealerTurn(); // End game if both hands have been played or if not split
+      }
     }
-  }
-};
+  };
 
   // Function to double down
   const doubleDown = () => {
@@ -194,6 +219,7 @@ const stand = () => {
       setPlayerHand1([playerHand[0]]);
       setPlayerHand2([playerHand[1]]);
       setCurrency(currency - bet); // Deduct additional bet for the second hand
+      setCurrentHand(1); // Start with the first hand
     }
   };
 
@@ -201,20 +227,17 @@ const stand = () => {
     <div>
       <h2>Blackjack Game</h2>
       <p>Currency: ${currency}</p>
-  
-      {/* Betting Buttons */}
+
       <button onClick={() => placeBet(10)}>Bet 10</button>
       <button onClick={() => placeBet(20)}>Bet 20</button>
       <button onClick={() => placeBet(50)}>Bet 50</button>
-  
-      {/* Game Control Buttons */}
+
       <button onClick={() => startGame(bet)} disabled={bet === 0}>Start New Game</button>
       <button onClick={hit} disabled={gameStatus !== 'Playing...'}>Hit</button>
       <button onClick={stand} disabled={gameStatus !== 'Playing...'}>Stand</button>
       <button onClick={doubleDown} disabled={isDoubleDown || currency < bet}>Double Down</button>
       <button onClick={handleSplit} disabled={!canSplit()}>Split</button>
-  
-      {/* Render Player Hands */}
+
       {isSplit ? (
         <>
           <div>
@@ -234,17 +257,15 @@ const stand = () => {
           <p>{playerHand.map(card => `${card.value}${card.suit}`).join(', ') || 'No cards yet'}</p>
         </div>
       )}
-  
-      {/* Dealer's Hand */}
+
       <div>
         <h3>Dealer's Hand ({calculateHandValue(dealerHand)})</h3>
         <p>{dealerHand.map(card => `${card.value}${card.suit}`).join(', ') || 'No cards yet'}</p>
       </div>
-  
+
       <p>{gameStatus}</p>
     </div>
   );
-  
 };
 
 export default Game;
