@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Creating the deck and shuffling logic
 const createDeck = () => {
@@ -49,10 +49,12 @@ const Game = () => {
     const [currentHand, setCurrentHand] = useState(1); // Track which hand is active
     const [deck, setDeck] = useState([]);
     const [gameStatus, setGameStatus] = useState('');
-    const [isDoubleDown, setIsDoubleDown] = useState(false); // Double Down status
+    const [isDoubleDownAllowed, setIsDoubleDownAllowed] = useState(true); // Allow double down only at start
     const [isSplit, setIsSplit] = useState(false); // Split status
     const [playerHand1, setPlayerHand1] = useState([]);
     const [playerHand2, setPlayerHand2] = useState([]);
+    const [isPaused, setIsPaused] = useState(false); // Pause status
+    const [timer, setTimer] = useState(null); // Timer for auto-dealing
 
     // Function to check if the player can split
     const canSplit = () => {
@@ -82,12 +84,59 @@ const Game = () => {
         setPlayerHand(playerInitialHand);
         setDealerHand(dealerInitialHand);
         setGameStatus('Playing...');
-        setIsDoubleDown(false);
+        setIsDoubleDownAllowed(true); // Allow double down only at the start of each game
         setIsSplit(false);
         setPlayerHand1([]);
         setPlayerHand2([]);
         setBet(betAmount);
+        clearTimeout(timer); // Clear any existing timer if a new game starts
     };
+
+    // Function to handle the end of a round
+const endRound = (status) => {
+    console.log("endRound called with status:", status);  // Debugging log
+    setGameStatus(`${status} New hand starting in 5 seconds...`);
+    setIsDoubleDownAllowed(false); // Disable double down after the round ends
+
+    // Automatically start a new hand after a 5-second delay
+    setTimer(setTimeout(() => {
+        console.log("Timer triggered - calling startNewHand");  // Debugging log
+        startNewHand();
+    }, 5000));
+};
+    
+
+    // Function to start a new hand automatically
+    const startNewHand = () => {
+        console.log("startNewHand called");  // Debugging log
+        setGameStatus('');
+        setBet(0);
+        setCanBet(true);
+        setPlayerHand([]);
+        setDealerHand([]);
+        setDeck(createDeck());
+    };
+
+    // Function to handle pause/resume
+    const togglePause = () => {
+        if (isPaused) {
+            setGameStatus('Game resumed. New hand starting in 5 seconds...');
+            setTimer(setTimeout(startNewHand, 5000)); // Resume the timer for new hand
+        } else {
+            setGameStatus('Game paused. Press "Resume" to continue.');
+            clearTimeout(timer); // Clear any existing timer
+        }
+        setIsPaused(!isPaused);
+    };
+
+    // UseEffect to clean up the timer on component unmount
+    useEffect(() => {
+        return () => {
+            console.log("Cleaning up timer");  // Debugging log
+            clearTimeout(timer);
+        };
+    }, [timer]);
+    
 
     const hit = () => {
         if (gameStatus !== 'Playing...') return;
@@ -133,7 +182,6 @@ const Game = () => {
             }
         }
     };
-
 
     // Dealer's turn to play
     const dealerTurn = () => {
@@ -184,16 +232,17 @@ const Game = () => {
         } else {
             const playerTotal = calculateHandValue(playerHand);
             if (playerTotal > 21) {
-                setGameStatus('Player busts! Dealer wins.');
+                endRound('Player busts! Dealer wins.');
             } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
-                setGameStatus('Player wins!');
                 setCurrency(currency + bet * 2);
+                endRound('Player wins!');
             } else if (dealerTotal === playerTotal) {
-                setGameStatus('Push.');
                 setCurrency(currency + bet);
+                endRound('Push.');
             } else {
-                setGameStatus('Dealer wins.');
+                endRound('Dealer wins.');
             }
+            
         }
     };
 
@@ -208,16 +257,14 @@ const Game = () => {
         }
     };
 
-
-
     // Function to double down
     const doubleDown = () => {
-        if (bet <= currency) {
-            setCurrency(currency - bet); // Deduct additional bet
-            setBet(bet * 2); // Double the bet
-            setIsDoubleDown(true);
-            hit();
-            stand(); // End the player's turn
+        if (isDoubleDownAllowed && bet <= currency) {
+            setCurrency(currency - bet);
+            setBet(bet * 2);
+            setIsDoubleDownAllowed(false); // Disable double down after it’s used
+            hit(); // Automatically hit after doubling down
+            stand(); // End the player's turn after doubling down
         }
     };
 
@@ -242,18 +289,18 @@ const Game = () => {
             <button onClick={() => placeBet(20)} disabled={!canBet}>Bet 20</button>
             <button onClick={() => placeBet(50)} disabled={!canBet}>Bet 50</button>
 
+            {/* Game Control Buttons */}
             <button onClick={() => startGame(bet)} disabled={bet === 0 || !canBet}>Start New Game</button>
+            <button onClick={togglePause}>{isPaused ? 'Resume' : 'Pause'}</button>
             <button
                 onClick={hit}
                 disabled={gameStatus !== 'Playing...' || (isSplit && currentHand === 2 && calculateHandValue(playerHand2) >= 21)}>
                 Hit
             </button>
-
-
             <button onClick={stand} disabled={gameStatus !== 'Playing...'}>Stand</button>
-            <button onClick={doubleDown} disabled={isDoubleDown || currency < bet}>Double Down</button>
+            <button onClick={doubleDown} disabled={!isDoubleDownAllowed}>Double Down</button>
             <button onClick={handleSplit} disabled={!canSplit()}>Split</button>
-            {/* Shorter way to write if-else */}
+
             {isSplit ? (
                 <>
                     <div>
