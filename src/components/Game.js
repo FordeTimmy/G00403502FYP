@@ -43,6 +43,7 @@ const calculateHandValue = (hand) => {
 const Game = () => {
     const [currency, setCurrency] = useState(1000); // Player's currency
     const [bet, setBet] = useState(0); // Initial bet
+    const [canBet, setCanBet] = useState(true); // Allow betting only at the start
     const [playerHand, setPlayerHand] = useState([]);
     const [dealerHand, setDealerHand] = useState([]);
     const [currentHand, setCurrentHand] = useState(1); // Track which hand is active
@@ -62,11 +63,13 @@ const Game = () => {
 
     // Function to place a bet and start a new game
     const placeBet = (amount) => {
-        if (amount <= currency && amount > 0) {
+        if (canBet && amount <= currency && amount > 0) {
             setBet(amount);
             setCurrency(currency - amount); // Deduct the bet from the player's currency
+            setCanBet(false); // Disable further betting once the game starts
+            startGame(amount);
         } else {
-            alert("Insufficient funds or invalid bet amount.");
+            alert("Betting is only allowed at the start of the game, and you need sufficient funds.");
         }
     };
 
@@ -234,11 +237,12 @@ const Game = () => {
             <h2>Blackjack Game</h2>
             <p>Currency: ${currency}</p>
 
-            <button onClick={() => placeBet(10)}>Bet 10</button>
-            <button onClick={() => placeBet(20)}>Bet 20</button>
-            <button onClick={() => placeBet(50)}>Bet 50</button>
+            {/* Betting Buttons, disabled if betting is not allowed */}
+            <button onClick={() => placeBet(10)} disabled={!canBet}>Bet 10</button>
+            <button onClick={() => placeBet(20)} disabled={!canBet}>Bet 20</button>
+            <button onClick={() => placeBet(50)} disabled={!canBet}>Bet 50</button>
 
-            <button onClick={() => startGame(bet)} disabled={bet === 0}>Start New Game</button>
+            <button onClick={() => startGame(bet)} disabled={bet === 0 || !canBet}>Start New Game</button>
             <button
                 onClick={hit}
                 disabled={gameStatus !== 'Playing...' || (isSplit && currentHand === 2 && calculateHandValue(playerHand2) >= 21)}>
@@ -249,7 +253,7 @@ const Game = () => {
             <button onClick={stand} disabled={gameStatus !== 'Playing...'}>Stand</button>
             <button onClick={doubleDown} disabled={isDoubleDown || currency < bet}>Double Down</button>
             <button onClick={handleSplit} disabled={!canSplit()}>Split</button>
-
+            {/* Shorter way to write if-else */}
             {isSplit ? (
                 <>
                     <div>
