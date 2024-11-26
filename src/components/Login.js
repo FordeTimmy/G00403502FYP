@@ -13,28 +13,31 @@ function Login() {
 
     // initialize a user profile in Firestore
     const initializeUserProfile = async (userId) => {
-        const userRef = doc(db, 'users', userId);
-        const userSnap = await getDoc(userRef);
+        try {
+            const userRef = doc(db, 'users', userId);
+            const userSnap = await getDoc(userRef);
 
-        if (!userSnap.exists()) {
-            await setDoc(userRef, {
-                wins: 0,
-                losses: 0,
-                totalAmountWon: 0,
-                totalAmountLost: 0,
-                playerStyle: 'unclassified',
-                gamesPlayed: 0,
-                averageBetSize: 0,
-                biggestWin: 0,
-                biggestLoss: 0,
-                dateJoined: new Date().toISOString(),
-                lastPlayed: null,
-                preferredGameType: null,
-                winStreak: 0,
-                currentStreak: 0
-            });
+            if (!userSnap.exists()) {
+                await setDoc(userRef, {
+                    biggestLoss: 0,
+                    biggestWin: 0,
+                    handsWon: 0,
+                    handsLost: 0,
+                    totalAmountWon: 0,
+                    totalAmountLost: 0,
+                    gamesPlayed: 0,
+                    averageBetSize: 0,
+                    lastPlayed: null,
+                    dateJoined: new Date().toISOString()
+                });
+                console.log("User profile initialized successfully");
+            }
+        } catch (error) {
+            console.error("Error initializing user profile:", error);
+            setError("Failed to initialize user profile");
         }
     };
+
     // handles user sign-up
     const handleSignUp = async (e) => {
         e.preventDefault();
