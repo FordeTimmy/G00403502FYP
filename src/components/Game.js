@@ -6,48 +6,50 @@ const createDeck = () => {
     const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
     const deck = [];
 
+    // Generate all 52 cards
     for (let suit of suits) {
         for (let value of values) {
             deck.push({ suit, value });
         }
     }
-    return deck.sort(() => Math.random() - 0.5); // Shuffle the deck
+    return deck.sort(() => Math.random() - 0.5); // Shuffle the deck randomly 
 };
 
 // Function to get card value
 const getCardValue = (card) => {
-    if (['J', 'Q', 'K'].includes(card.value)) return 10;
-    if (card.value === 'A') return 11;
+    if (['J', 'Q', 'K'].includes(card.value)) return 10; // Face cards are worth 10
+    if (card.value === 'A') return 11; // Ace is worth 11 by default
     return parseInt(card.value);
 };
 
 // Function to calculate hand total
 const calculateHandValue = (hand) => {
     let total = 0;
-    let aces = 0;
+    let aces = 0; // Count the number of Aces in the hand
 
+     // Sum up the values of all cards
     hand.forEach(card => {
         total += getCardValue(card);
-        if (card.value === 'A') aces += 1;
+        if (card.value === 'A') aces += 1; // Track the number of Aces
     });
 
-    // Adjust for Aces
+    // Adjust Aces to avoid busting (each Ace can be worth 1 instead of 11)
     while (total > 21 && aces > 0) {
-        total -= 10;
-        aces -= 1;
+        total -= 10; // Subtract 10 for each Ace
+        aces -= 1; // Reduce the Ace count
     }
 
-    return total;
+    return total; // Return the total value of the hand
 };
 
 const Game = () => {
     const [currency, setCurrency] = useState(1000); // Player's currency
     const [bet, setBet] = useState(0); // Initial bet
     const [canBet, setCanBet] = useState(true); // Allow betting only at the start
-    const [playerHand, setPlayerHand] = useState([]);
-    const [dealerHand, setDealerHand] = useState([]);
+    const [playerHand, setPlayerHand] = useState([]);  // Player's hand
+    const [dealerHand, setDealerHand] = useState([]); // Dealer's hand
     const [currentHand, setCurrentHand] = useState(1); // Track which hand is active
-    const [deck, setDeck] = useState([]);
+    const [deck, setDeck] = useState([]); // Current deck
     const [gameStatus, setGameStatus] = useState('');
     const [isDoubleDownAllowed, setIsDoubleDownAllowed] = useState(true); // Allow double down only at start
     const [isSplit, setIsSplit] = useState(false); // Split status
@@ -58,14 +60,14 @@ const Game = () => {
 
     // Function to check if the player can split
     const canSplit = () => {
-        return playerHand.length === 2 &&
-            getCardValue(playerHand[0]) === getCardValue(playerHand[1]) &&
-            bet <= currency;
+        return playerHand.length === 2 && // Ensure there are exactly 2 cards
+            getCardValue(playerHand[0]) === getCardValue(playerHand[1]) && // Both cards must have the same value
+            bet <= currency; // Player must have enough currency to place an additional bet
     };
 
     // Function to place a bet and start a new game
     const placeBet = (amount) => {
-        if (canBet && amount <= currency && amount > 0) {
+        if (canBet && amount <= currency && amount > 0) { // Check if betting is allowed 
             setBet(amount);
             setCurrency(currency - amount); // Deduct the bet from the player's currency
             setCanBet(false); // Disable further betting once the game starts
@@ -88,7 +90,7 @@ const Game = () => {
         setIsSplit(false);
         setPlayerHand1([]);
         setPlayerHand2([]);
-        setBet(betAmount);
+        setBet(betAmount); // Update the bet
         clearTimeout(timer); // Clear any existing timer if a new game starts
     };
 
@@ -137,12 +139,12 @@ const endRound = (status) => {
         };
     }, [timer]);
     
-
+// Function to handle the player hitting 
     const hit = () => {
-        if (gameStatus !== 'Playing...') return;
+        if (gameStatus !== 'Playing...') return; // Prevent hitting if the game is not active
 
-        const newDeck = [...deck];
-        const newCard = newDeck.pop();
+        const newDeck = [...deck]; // Copy the current deck
+        const newCard = newDeck.pop(); // Draw the top card
 
         if (isSplit) {
             if (currentHand === 1) {
