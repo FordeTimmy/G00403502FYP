@@ -1,27 +1,62 @@
-
 import React, { useState } from 'react';
 import { auth } from '../firebaseConfig';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 function Login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState(''); // Holds the email entered by the user.
+    const [password, setPassword] = useState(''); // Holds the password entered by the user.
     const [error, setError] = useState('');
 
+     // Initialize Firestore to interact with the database.
+    const db = getFirestore();
+
+    // initialize a user profile in Firestore
+    const initializeUserProfile = async (userId) => {
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+            await setDoc(userRef, {
+                wins: 0,
+                losses: 0,
+                totalAmountWon: 0,
+                totalAmountLost: 0,
+                playerStyle: 'unclassified',
+                gamesPlayed: 0,
+                averageBetSize: 0,
+                biggestWin: 0,
+                biggestLoss: 0,
+                dateJoined: new Date().toISOString(),
+                lastPlayed: null,
+                preferredGameType: null,
+                winStreak: 0,
+                currentStreak: 0
+            });
+        }
+    };
+    // handles user sign-up
     const handleSignUp = async (e) => {
         e.preventDefault();
         try {
-            await createUserWithEmailAndPassword(auth, email, password);
+            // Create a new user with the email and password using Firebase Authentication.
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+             // Initialize the user's profile in Firestore
+            await initializeUserProfile(userCredential.user.uid);
             setError('');
         } catch (error) {
             setError(error.message);
         }
     };
 
+    //handle user login
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            // Log in the user with their email and password using Firebase Authentication
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            // Initialize the user's profile in Firestore
+            await initializeUserProfile(userCredential.user.uid);
             setError('');
         } catch (error) {
             setError(error.message);
