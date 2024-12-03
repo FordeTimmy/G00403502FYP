@@ -109,6 +109,49 @@ const Game = () => {
     const [isPaused, setIsPaused] = useState(false); // Pause status
     const [timer, setTimer] = useState(null); // Timer for auto-dealing
 
+    // Move useEffect inside the component
+    useEffect(() => {
+        const loadSavedGame = async () => {
+            if (!auth.currentUser) return;
+
+            const db = getFirestore();
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists() && userSnap.data().savedGame) {
+                const savedGame = userSnap.data().savedGame;
+                setCurrency(savedGame.currency || 1000);
+                setBet(savedGame.bet || 0);
+                setGameStatus(savedGame.gameStatus || '');
+            }
+        };
+
+        loadSavedGame();
+    }, []);
+
+    // Move saveGame function inside the component
+    const saveGame = async () => {
+        if (!auth.currentUser) return;
+
+        const db = getFirestore();
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+
+        try {
+            await updateDoc(userRef, {
+                savedGame: {
+                    currency,
+                    bet,
+                    gameStatus,
+                    lastSaved: new Date().toISOString()
+                }
+            });
+            alert('Game saved successfully!');
+        } catch (error) {
+            console.error('Error saving game:', error);
+            alert('Failed to save game');
+        }
+    };
+
     // Function to check if the player can split
     const canSplit = () => {
         return playerHand.length === 2 && // Ensure there are exactly 2 cards
@@ -359,6 +402,7 @@ const endRound = (status) => {
                 disabled={gameStatus !== 'Playing...' || (isSplit && currentHand === 2 && calculateHandValue(playerHand2) >= 21)}>
                 Hit
             </button>
+            <button onClick={saveGame}>Save Game</button>
             <button onClick={stand} disabled={gameStatus !== 'Playing...'}>Stand</button>
             <button onClick={doubleDown} disabled={!isDoubleDownAllowed}>Double Down</button>
             <button onClick={handleSplit} disabled={!canSplit()}>Split</button>
