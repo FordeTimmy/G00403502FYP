@@ -194,9 +194,20 @@ const endRound = (status) => {
     setGameStatus(`${status} New hand starting in 5 seconds...`);
     setIsDoubleDownAllowed(false); // Disable double down after the round ends
 
-    // Update user stats based on game result
-    const result = status.toLowerCase().includes('wins') ? 'win' : 'loss';
-    updateUserStats(result, bet);
+    // Improve result determination logic
+    let result;
+    if (status.toLowerCase().includes('player wins')) {
+        result = 'win';
+    } else if (status.toLowerCase().includes('push')) {
+        result = 'push';
+    } else {
+        result = 'loss';  // Consider everything else as a loss (dealer wins, player busts)
+    }
+
+    // Only update stats for wins and losses, not pushes
+    if (result !== 'push') {
+        updateUserStats(result, bet);
+    }
 
     // Only set the timer if the game is not paused
     if (!isPaused) {
@@ -337,17 +348,19 @@ const endRound = (status) => {
         } else {
             const playerTotal = calculateHandValue(playerHand);
             if (playerTotal > 21) {
-                endRound('Player busts! Dealer wins.');
-            } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+                endRound('Player busts! Dealer wins.');  // This will be counted as a loss
+            } else if (dealerTotal > 21) {
                 setCurrency(currency + bet * 2);
-                endRound('Player wins!');
+                endRound('Player wins!');  // This will be counted as a win
+            } else if (playerTotal > dealerTotal) {
+                setCurrency(currency + bet * 2);
+                endRound('Player wins!');  // This will be counted as a win
             } else if (dealerTotal === playerTotal) {
                 setCurrency(currency + bet);
-                endRound('Push.');
+                endRound('Push.');  // This will be counted as a push
             } else {
-                endRound('Dealer wins.');
+                endRound('Dealer wins.');  // This will be counted as a loss
             }
-            
         }
     };
 
