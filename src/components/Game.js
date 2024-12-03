@@ -155,17 +155,21 @@ const endRound = (status) => {
     const result = status.toLowerCase().includes('wins') ? 'win' : 'loss';
     updateUserStats(result, bet);
 
-    // Automatically start a new hand after a 5-second delay
-    setTimer(setTimeout(() => {
-        console.log("Timer triggered - calling startNewHand");  // Debugging log
-        startNewHand();
-    }, 5000));
+    // Only set the timer if the game is not paused
+    if (!isPaused) {
+        const newTimer = setTimeout(() => {
+            console.log("Timer triggered - calling startNewHand");  // Debugging log
+            startNewHand();
+        }, 5000);
+        setTimer(newTimer); // Update the timer state
+    }
 };
     
 
     // Function to start a new hand automatically
     const startNewHand = () => {
         console.log("startNewHand called");  // Debugging log
+        clearTimeout(timer); // Ensure any old timer is cleared
         setGameStatus('');
         setBet(0);
         setCanBet(true);
@@ -177,11 +181,12 @@ const endRound = (status) => {
     // Function to handle pause/resume
     const togglePause = () => {
         if (isPaused) {
-            setGameStatus('Game resumed. New hand starting in 5 seconds...');
-            setTimer(setTimeout(startNewHand, 5000)); // Resume the timer for new hand
+            // Resume game - just update the status
+            setGameStatus('Game resumed');
         } else {
+            // Pause game - clear any pending timers and update status
+            clearTimeout(timer);
             setGameStatus('Game paused. Press "Resume" to continue.');
-            clearTimeout(timer); // Clear any existing timer
         }
         setIsPaused(!isPaused);
     };
@@ -233,7 +238,7 @@ const endRound = (status) => {
 
             const playerTotal = calculateHandValue(newPlayerHand);
             if (playerTotal > 21) {
-                setGameStatus('Player busts! Dealer wins.');
+                endRound('Player busts! Dealer wins.'); 
             } else {
                 setGameStatus('Playing...'); // Keep playing if not busting
             }
