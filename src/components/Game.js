@@ -129,7 +129,7 @@ const Game = () => {
         loadSavedGame();
     }, []);
 
-    // Move saveGame function inside the component
+    
     const saveGame = async () => {
         if (!auth.currentUser) return;
 
@@ -235,12 +235,11 @@ const endRound = (status) => {
     // Function to handle pause/resume
     const togglePause = () => {
         if (isPaused) {
-            // Resume game - just update the status
-            setGameStatus('Game resumed');
+            // Resume game - restore previous game status
+            setGameStatus('Playing...');
         } else {
-            // Pause game - clear any pending timers and update status
+            // Pause game - clear any pending timers
             clearTimeout(timer);
-            setGameStatus('Game paused. Press "Resume" to continue.');
         }
         setIsPaused(!isPaused);
     };
@@ -403,22 +402,22 @@ const endRound = (status) => {
             <p>Currency: ${currency}</p>
 
             {/* Betting Buttons, disabled if betting is not allowed */}
-            <button onClick={() => placeBet(10)} disabled={!canBet}>Bet 10</button>
-            <button onClick={() => placeBet(20)} disabled={!canBet}>Bet 20</button>
-            <button onClick={() => placeBet(50)} disabled={!canBet}>Bet 50</button>
+            <button onClick={() => placeBet(10)} disabled={!canBet || isPaused}>Bet 10</button>
+            <button onClick={() => placeBet(20)} disabled={!canBet || isPaused}>Bet 20</button>
+            <button onClick={() => placeBet(50)} disabled={!canBet || isPaused}>Bet 50</button>
 
             {/* Game Control Buttons */}
-            <button onClick={() => startGame(bet)} disabled={bet === 0 || !canBet}>Start New Game</button>
+            <button onClick={() => startGame(bet)} disabled={bet === 0 || !canBet || isPaused}>Start New Game</button>
             <button onClick={togglePause}>{isPaused ? 'Resume' : 'Pause'}</button>
             <button
                 onClick={hit}
-                disabled={gameStatus !== 'Playing...' || (isSplit && currentHand === 2 && calculateHandValue(playerHand2) >= 21)}>
+                disabled={gameStatus !== 'Playing...' || isPaused || (isSplit && currentHand === 2 && calculateHandValue(playerHand2) >= 21)}>
                 Hit
             </button>
             <button onClick={saveGame}>Save Game</button>
-            <button onClick={stand} disabled={gameStatus !== 'Playing...'}>Stand</button>
-            <button onClick={doubleDown} disabled={!isDoubleDownAllowed}>Double Down</button>
-            <button onClick={handleSplit} disabled={!canSplit()}>Split</button>
+            <button onClick={stand} disabled={gameStatus !== 'Playing...' || isPaused}>Stand</button>
+            <button onClick={doubleDown} disabled={!isDoubleDownAllowed || isPaused}>Double Down</button>
+            <button onClick={handleSplit} disabled={!canSplit() || isPaused}>Split</button>
 
             {isSplit ? (
                 <>
