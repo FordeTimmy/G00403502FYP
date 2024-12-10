@@ -45,44 +45,32 @@ const calculateHandValue = (hand) => {
 };
 
 const updateUserStats = async (gameResult, betAmount = 0) => {
-    if (!auth.currentUser) return; // Ensure a user is logged in before attempting to update stats.
+    if (!auth.currentUser) return;
 
-    const db = getFirestore(); // Initialize Firestore with the database
+    const db = getFirestore();
     const userRef = doc(db, 'users', auth.currentUser.uid);
-    const userSnap = await getDoc(userRef); // Fetch the current user's document data from Firestore
+    const userSnap = await getDoc(userRef);
 
-    // If document doesn't exist, initialize it
+    // Initialize stats if they don't exist
     if (!userSnap.exists()) {
-        console.log("User document does not exist, initializing...");
         await setDoc(userRef, {
             handsWon: 0,
             handsLost: 0,
             totalAmountWon: 0,
             totalAmountLost: 0,
-            gamesPlayed: 0,
-            lastPlayed: null,
-            biggestWin: 0,
-            biggestLoss: 0,
-            averageBetSize: 0
+            gamesPlayed: 0
         });
-        return;
     }
 
-    const userData = userSnap.data(); // Retrieve the current data of the user's document.
+    const userData = userSnap.exists() ? userSnap.data() : {};
     const isWin = gameResult === 'win';
-    const validBetAmount = betAmount || 0;
 
-    //new stats to update in database
     const newStats = {
-        handsWon: (userData.handsWon || 0) + (isWin ? 1 : 0), //add 1 to handsWon if win
-        handsLost: (userData.handsLost || 0) + (isWin ? 0 : 1),// add 1 to handsLost if loss
-        totalAmountWon: (userData.totalAmountWon || 0) + (isWin ? validBetAmount : 0), //add betAmount to totalAmountWon if win
-        totalAmountLost: (userData.totalAmountLost || 0) + (isWin ? 0 : validBetAmount), // add betAmount to totalAmountLost if loss
-        gamesPlayed: (userData.gamesPlayed || 0) + 1, //add 1 to gamesPlayed
-        lastPlayed: new Date().toISOString(), //update lastPlayed to current time
-        biggestWin: isWin ? Math.max(userData.biggestWin || 0, validBetAmount) : (userData.biggestWin || 0), //update biggestWin if win
-        biggestLoss: !isWin ? Math.max(userData.biggestLoss || 0, validBetAmount) : (userData.biggestLoss || 0), //update biggestLoss if loss
-        averageBetSize: (((userData.averageBetSize || 0) * (userData.gamesPlayed || 0)) + validBetAmount) / ((userData.gamesPlayed || 0) + 1) //update averageBetSize
+        handsWon: (userData.handsWon || 0) + (isWin ? 1 : 0),
+        handsLost: (userData.handsLost || 0) + (!isWin ? 1 : 0),
+        totalAmountWon: (userData.totalAmountWon || 0) + (isWin ? betAmount : 0),
+        totalAmountLost: (userData.totalAmountLost || 0) + (!isWin ? betAmount : 0),
+        gamesPlayed: (userData.gamesPlayed || 0) + 1
     };
 
     try {
