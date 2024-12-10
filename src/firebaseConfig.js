@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserSessionPersistence, signOut } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDe1srWDIJV926tUgWawcGDhmdJNWbd62Y",
@@ -18,6 +18,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 export const db = getFirestore(app);
-export const auth = getAuth(app);
 
-export { analytics };
+console.log('Initializing Firebase Auth');
+const auth = getAuth(app);
+
+// Sign out any existing user
+signOut(auth).then(() => {
+    console.log('Signed out any existing user');
+}).catch((error) => {
+    console.error('Error signing out:', error);
+});
+
+// Set persistence to SESSION (clears on tab close)
+setPersistence(auth, browserSessionPersistence)
+    .then(() => console.log('Auth persistence set to SESSION'))
+    .catch((error) => {
+        console.error("Auth persistence error:", error);
+    });
+
+export { analytics, auth, signOut };
