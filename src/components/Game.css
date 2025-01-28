@@ -12,6 +12,7 @@
     gap: 10px;
     justify-content: center;
     padding: 20px;
+    min-height: 150px; /* Maintain spacing even when empty */
 }
 
 .card, .chip {
@@ -30,6 +31,8 @@
 .chip {
     height: 80px; /* Keep chips circular */
     border-radius: 50%;
+    animation: chipEntrance 0.5s ease-out forwards;
+    opacity: 0;
 }
 
 .chip.disabled {
@@ -72,3 +75,81 @@
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     pointer-events: none;
 }
+
+@keyframes slideIn {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes chipMove {
+    from {
+        transform: translateY(100px) scale(1.2);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.card {
+    width: 80px;
+    height: auto;
+    margin: 5px;
+    opacity: 0;
+    animation: cardDeal 0.5s ease-out forwards;
+}
+
+.chip {
+    width: 60px;
+    height: auto;
+    opacity: 0;
+    animation: chipMove 0.7s ease-out forwards;
+}
+
+.betting-chips {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    perspective: 1000px;
+}
+
+@keyframes chipEntrance {
+    0% {
+        transform: translateY(100px) rotate(180deg);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes cardDeal {
+    0% {
+        transform: translateY(-100px) translateX(-200px) rotate(-90deg);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0) translateX(0) rotate(0);
+        opacity: 1;
+    }
+}
+
+.chip:nth-child(1) { animation-delay: 0.1s; }
+.chip:nth-child(2) { animation-delay: 0.2s; }
+.chip:nth-child(3) { animation-delay: 0.3s; }
+.chip:nth-child(4) { animation-delay: 0.4s; }
+
+.dealer-hand .card:nth-child(1) { animation-delay: 0.1s; }
+.dealer-hand .card:nth-child(2) { animation-delay: 0.2s; }
+.player-hand .card:nth-child(1) { animation-delay: 0.3s; }
+.player-hand .card:nth-child(2) { animation-delay: 0.4s; }
+

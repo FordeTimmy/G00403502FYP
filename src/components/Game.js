@@ -431,44 +431,24 @@ const endRound = (status) => {
             <h2 className="text-white text-center text-2xl mb-4">Blackjack Game</h2>
             <p className="text-white text-center">Currency: ${currency}</p>
 
-            {/* Replace betting controls with chip images */}
+            {/* Animated betting chips */}
             <div className="betting-chips">
-                <div className="chip-container">
-                    <img 
-                        src={getChipImage('10')}
-                        alt="Bet 10"
-                        className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
-                        onClick={() => canBet && !isPaused && placeBet(10)}
-                    />
-                    <span className="chip-label">10</span>
-                </div>
-                <div className="chip-container">
-                    <img 
-                        src={getChipImage('20')}
-                        alt="Bet 20"
-                        className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
-                        onClick={() => canBet && !isPaused && placeBet(20)}
-                    />
-                    <span className="chip-label">20</span>
-                </div>
-                <div className="chip-container">
-                    <img 
-                        src={getChipImage('50')}
-                        alt="Bet 50"
-                        className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
-                        onClick={() => canBet && !isPaused && placeBet(50)}
-                    />
-                    <span className="chip-label">50</span>
-                </div>
-                <div className="chip-container">
-                    <img 
-                        src={getChipImage('100')}
-                        alt="Bet 100"
-                        className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
-                        onClick={() => canBet && !isPaused && placeBet(100)}
-                    />
-                    <span className="chip-label">100</span>
-                </div>
+                {[
+                    { value: '10', label: '10' },
+                    { value: '20', label: '20' },
+                    { value: '50', label: '50' },
+                    { value: '100', label: '100' }
+                ].map((chip, index) => (
+                    <div key={index} className="chip-container">
+                        <img 
+                            src={getChipImage(chip.value)}
+                            alt={`Bet ${chip.label}`}
+                            className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
+                            onClick={() => canBet && !isPaused && placeBet(parseInt(chip.value))}
+                        />
+                        <span className="chip-label">{chip.label}</span>
+                    </div>
+                ))}
             </div>
 
             {/* Dealer's hand */}
