@@ -138,6 +138,7 @@ const Game = () => {
     const [playerHand2, setPlayerHand2] = useState([]);
     const [isPaused, setIsPaused] = useState(false); // Pause status
     const [timer, setTimer] = useState(null); // Timer for auto-dealing
+    const [activeBet, setActiveBet] = useState(null); // Add this state for the active bet chip
 
     // Move useEffect inside the component
     useEffect(() => {
@@ -195,6 +196,7 @@ const Game = () => {
             setBet(amount);
             setCurrency(currency - amount); // Deduct the bet from the player's currency
             setCanBet(false); // Disable further betting once the game starts
+            setActiveBet(amount); // Store the bet amount to show correct chip
             startGame(amount);
         } else {
             alert("Betting is only allowed at the start of the game, and you need sufficient funds.");
@@ -260,6 +262,7 @@ const endRound = (status) => {
         setPlayerHand([]);
         setDealerHand([]);
         setDeck(createDeck());
+        setActiveBet(null);
     };
 
     // Function to handle pause/resume
@@ -465,6 +468,18 @@ const endRound = (status) => {
                     ))}
                 </div>
             </div>
+
+            {/* Update betting pot display */}
+            {activeBet && (
+                <div className="pot-container">
+                    <img 
+                        src={getChipImage(activeBet.toString())}
+                        alt="Pot Chip"
+                        className="pot-chip"
+                    />
+                    <span className="pot-amount">${activeBet}</span>
+                </div>
+            )}
 
             {/* Player's hand(s) */}
             {isSplit ? (
