@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
+import './Game.css';
 
 // Creating the deck and shuffling logic
 const createDeck = () => {
@@ -82,6 +83,36 @@ const updateUserStats = async (gameResult, betAmount = 0) => {
 };
 
 const Game = () => {
+    // Update card image helper to use Deck of Cards API CDN
+    const getCardImage = (card) => {
+        if (!card) return '';
+        const value = card.value;
+        const suit = card.suit;
+        let suitCode = '';
+        let valueCode = value;
+        
+        // Convert suit symbols to letters
+        switch(suit) {
+            case '♠': suitCode = 'S'; break;
+            case '♥': suitCode = 'H'; break;
+            case '♣': suitCode = 'C'; break;
+            case '♦': suitCode = 'D'; break;
+            default: suitCode = 'S';
+        }
+
+        // Convert values to match API format
+        switch(value) {
+            case '10': valueCode = '0'; break;
+            case 'J': valueCode = 'J'; break;
+            case 'Q': valueCode = 'Q'; break;
+            case 'K': valueCode = 'K'; break;
+            case 'A': valueCode = 'A'; break;
+            default: valueCode = value;
+        }
+
+        return `https://deckofcardsapi.com/static/img/${valueCode}${suitCode}.png`;
+    };
+
     const [currency, setCurrency] = useState(1000); // Player's currency
     const [bet, setBet] = useState(0); // Initial bet
     const [canBet, setCanBet] = useState(true); // Allow betting only at the start
@@ -385,54 +416,94 @@ const endRound = (status) => {
     };
 
     return (
-        <div>
-            <h2>Blackjack Game</h2>
-            <p>Currency: ${currency}</p>
+        <div className="casino-table">
+            <h2 className="text-white text-center text-2xl mb-4">Blackjack Game</h2>
+            <p className="text-white text-center">Currency: ${currency}</p>
 
-            {/* Betting Buttons, disabled if betting is not allowed */}
-            <button onClick={() => placeBet(10)} disabled={!canBet || isPaused}>Bet 10</button>
-            <button onClick={() => placeBet(20)} disabled={!canBet || isPaused}>Bet 20</button>
-            <button onClick={() => placeBet(50)} disabled={!canBet || isPaused}>Bet 50</button>
+            {/* Betting controls */}
+            <div className="controls">
+                <button onClick={() => placeBet(10)} disabled={!canBet || isPaused}>Bet 10</button>
+                <button onClick={() => placeBet(20)} disabled={!canBet || isPaused}>Bet 20</button>
+                <button onClick={() => placeBet(50)} disabled={!canBet || isPaused}>Bet 50</button>
+            </div>
 
-            {/* Game Control Buttons */}
-            <button onClick={() => startGame(bet)} disabled={bet === 0 || !canBet || isPaused}>Start New Game</button>
-            <button onClick={togglePause}>{isPaused ? 'Resume' : 'Pause'}</button>
-            <button
-                onClick={hit}
-                disabled={gameStatus !== 'Playing...' || isPaused || (isSplit && currentHand === 2 && calculateHandValue(playerHand2) >= 21)}>
-                Hit
-            </button>
-            <button onClick={saveGame}>Save Game</button>
-            <button onClick={stand} disabled={gameStatus !== 'Playing...' || isPaused}>Stand</button>
-            <button onClick={doubleDown} disabled={!isDoubleDownAllowed || isPaused}>Double Down</button>
-            <button onClick={handleSplit} disabled={!canSplit() || isPaused}>Split</button>
+            {/* Dealer's hand */}
+            <div className="dealer-hand">
+                <h3 className="text-white">Dealer's Hand ({calculateHandValue(dealerHand)})</h3>
+                <div className="flex gap-2">
+                    {dealerHand.map((card, index) => (
+                        <img 
+                            key={index}
+                            src={getCardImage(card)}
+                            alt={`${card.value}${card.suit}`}
+                            className="card"
+                        />
+                    ))}
+                </div>
+            </div>
 
+            {/* Player's hand(s) */}
             {isSplit ? (
                 <>
-                    <div>
-                        <h3>Hand 1 ({calculateHandValue(playerHand1)})</h3>
-                        <p>{playerHand1.map(card => `${card.value}${card.suit}`).join(', ')}</p>
-                        {currentHand === 1 && <p>Currently Playing Hand 1</p>}
+                    <div className="player-hand">
+                        <h3 className="text-white">Hand 1 ({calculateHandValue(playerHand1)})</h3>
+                        <div className="flex gap-2">
+                            {playerHand1.map((card, index) => (
+                                <img 
+                                    key={index}
+                                    src={getCardImage(card)}
+                                    alt={`${card.value}${card.suit}`}
+                                    className="card"
+                                />
+                            ))}
+                        </div>
                     </div>
-                    <div>
-                        <h3>Hand 2 ({calculateHandValue(playerHand2)})</h3>
-                        <p>{playerHand2.map(card => `${card.value}${card.suit}`).join(', ')}</p>
-                        {currentHand === 2 && <p>Currently Playing Hand 2</p>}
+                    <div className="player-hand">
+                        <h3 className="text-white">Hand 2 ({calculateHandValue(playerHand2)})</h3>
+                        <div className="flex gap-2">
+                            {playerHand2.map((card, index) => (
+                                <img 
+                                    key={index}
+                                    src={getCardImage(card)}
+                                    alt={`${card.value}${card.suit}`}
+                                    className="card"
+                                />
+                            ))}
+                        </div>
                     </div>
                 </>
             ) : (
-                <div>
-                    <h3>Player's Hand ({calculateHandValue(playerHand)})</h3>
-                    <p>{playerHand.map(card => `${card.value}${card.suit}`).join(', ') || 'No cards yet'}</p>
+                <div className="player-hand">
+                    <h3 className="text-white">Player's Hand ({calculateHandValue(playerHand)})</h3>
+                    <div className="flex gap-2">
+                        {playerHand.map((card, index) => (
+                            <img 
+                                key={index}
+                                src={getCardImage(card)}
+                                alt={`${card.value}${card.suit}`}
+                                className="card"
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
 
-            <div>
-                <h3>Dealer's Hand ({calculateHandValue(dealerHand)})</h3>
-                <p>{dealerHand.map(card => `${card.value}${card.suit}`).join(', ') || 'No cards yet'}</p>
+            {/* Game controls */}
+            <div className="controls">
+                <button onClick={() => startGame(bet)} disabled={bet === 0 || !canBet || isPaused}>Start New Game</button>
+                <button onClick={togglePause}>{isPaused ? 'Resume' : 'Pause'}</button>
+                <button
+                    onClick={hit}
+                    disabled={gameStatus !== 'Playing...' || isPaused || (isSplit && currentHand === 2 && calculateHandValue(playerHand2) >= 21)}>
+                    Hit
+                </button>
+                <button onClick={saveGame}>Save Game</button>
+                <button onClick={stand} disabled={gameStatus !== 'Playing...' || isPaused}>Stand</button>
+                <button onClick={doubleDown} disabled={!isDoubleDownAllowed || isPaused}>Double Down</button>
+                <button onClick={handleSplit} disabled={!canSplit() || isPaused}>Split</button>
             </div>
 
-            <p>{gameStatus}</p>
+            <p className="text-white text-center">{gameStatus}</p>
         </div>
     );
 };
