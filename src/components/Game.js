@@ -113,12 +113,13 @@ const Game = () => {
         return `https://deckofcardsapi.com/static/img/${valueCode}${suitCode}.png`;
     };
 
-    // Update chip image helper to use .png extension
+    // Update chip image helper with new values
     const getChipImage = (value) => {
         const chipMap = {
             '10': '/images/chips/redchip.png',
-            '20': '/images/chips/bluechip.png',
-            '50': '/images/chips/blackchip.png'
+            '20': '/images/chips/greenchip.png',
+            '50': '/images/chips/bluechip.png',
+            '100': '/images/chips/blackchip.png'
         };
         return chipMap[value];
     };
@@ -432,24 +433,42 @@ const endRound = (status) => {
 
             {/* Replace betting controls with chip images */}
             <div className="betting-chips">
-                <img 
-                    src={getChipImage('10')}
-                    alt="Bet 10"
-                    className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
-                    onClick={() => canBet && !isPaused && placeBet(10)}
-                />
-                <img 
-                    src={getChipImage('20')}
-                    alt="Bet 20"
-                    className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
-                    onClick={() => canBet && !isPaused && placeBet(20)}
-                />
-                <img 
-                    src={getChipImage('50')}
-                    alt="Bet 50"
-                    className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
-                    onClick={() => canBet && !isPaused && placeBet(50)}
-                />
+                <div className="chip-container">
+                    <img 
+                        src={getChipImage('10')}
+                        alt="Bet 10"
+                        className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
+                        onClick={() => canBet && !isPaused && placeBet(10)}
+                    />
+                    <span className="chip-label">10</span>
+                </div>
+                <div className="chip-container">
+                    <img 
+                        src={getChipImage('20')}
+                        alt="Bet 20"
+                        className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
+                        onClick={() => canBet && !isPaused && placeBet(20)}
+                    />
+                    <span className="chip-label">20</span>
+                </div>
+                <div className="chip-container">
+                    <img 
+                        src={getChipImage('50')}
+                        alt="Bet 50"
+                        className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
+                        onClick={() => canBet && !isPaused && placeBet(50)}
+                    />
+                    <span className="chip-label">50</span>
+                </div>
+                <div className="chip-container">
+                    <img 
+                        src={getChipImage('100')}
+                        alt="Bet 100"
+                        className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
+                        onClick={() => canBet && !isPaused && placeBet(100)}
+                    />
+                    <span className="chip-label">100</span>
+                </div>
             </div>
 
             {/* Dealer's hand */}
