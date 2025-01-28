@@ -431,8 +431,13 @@ const endRound = (status) => {
 
     return (
         <div className="casino-table">
-            <h2 className="text-white text-center text-2xl mb-4">Blackjack Game</h2>
-            <p className="text-white text-center">Currency: ${currency}</p>
+            {/* Updated game header */}
+            <div className="game-header">
+                <h1 className="game-title">Casino Blackjack</h1>
+                <div className="currency-display">
+                    Balance: ${currency.toLocaleString()}
+                </div>
+            </div>
 
             {/* Animated betting chips */}
             <div className="betting-chips">
@@ -542,7 +547,12 @@ const endRound = (status) => {
                 <button onClick={handleSplit} disabled={!canSplit() || isPaused}>Split</button>
             </div>
 
-            <p className="text-white text-center">{gameStatus}</p>
+            {/* Move status message to bottom */}
+            {gameStatus && (
+                <div className="game-status">
+                    {gameStatus}
+                </div>
+            )}
         </div>
     );
 };
