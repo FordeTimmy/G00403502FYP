@@ -113,6 +113,16 @@ const Game = () => {
         return `https://deckofcardsapi.com/static/img/${valueCode}${suitCode}.png`;
     };
 
+    // Update chip image helper to use .png extension
+    const getChipImage = (value) => {
+        const chipMap = {
+            '10': '/images/chips/redchip.png',
+            '20': '/images/chips/bluechip.png',
+            '50': '/images/chips/blackchip.png'
+        };
+        return chipMap[value];
+    };
+
     const [currency, setCurrency] = useState(1000); // Player's currency
     const [bet, setBet] = useState(0); // Initial bet
     const [canBet, setCanBet] = useState(true); // Allow betting only at the start
@@ -420,11 +430,26 @@ const endRound = (status) => {
             <h2 className="text-white text-center text-2xl mb-4">Blackjack Game</h2>
             <p className="text-white text-center">Currency: ${currency}</p>
 
-            {/* Betting controls */}
-            <div className="controls">
-                <button onClick={() => placeBet(10)} disabled={!canBet || isPaused}>Bet 10</button>
-                <button onClick={() => placeBet(20)} disabled={!canBet || isPaused}>Bet 20</button>
-                <button onClick={() => placeBet(50)} disabled={!canBet || isPaused}>Bet 50</button>
+            {/* Replace betting controls with chip images */}
+            <div className="betting-chips">
+                <img 
+                    src={getChipImage('10')}
+                    alt="Bet 10"
+                    className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
+                    onClick={() => canBet && !isPaused && placeBet(10)}
+                />
+                <img 
+                    src={getChipImage('20')}
+                    alt="Bet 20"
+                    className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
+                    onClick={() => canBet && !isPaused && placeBet(20)}
+                />
+                <img 
+                    src={getChipImage('50')}
+                    alt="Bet 50"
+                    className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
+                    onClick={() => canBet && !isPaused && placeBet(50)}
+                />
             </div>
 
             {/* Dealer's hand */}
