@@ -439,13 +439,13 @@ const endRound = (status) => {
                 </div>
             </div>
 
-            {/* Animated betting chips */}
+            {/* Move chips to vertical layout */}
             <div className="betting-chips">
                 {[
-                    { value: '10', label: '10' },
-                    { value: '20', label: '20' },
+                    { value: '100', label: '100' },
                     { value: '50', label: '50' },
-                    { value: '100', label: '100' }
+                    { value: '20', label: '20' },
+                    { value: '10', label: '10' }
                 ].map((chip, index) => (
                     <div key={index} className="chip-container">
                         <img 
@@ -474,16 +474,18 @@ const endRound = (status) => {
                 </div>
             </div>
 
-            {/* Update betting pot display */}
+            {/* Updated betting display */}
             {activeBet && (
-                <div className="pot-container">
-                    <img 
-                        src={getChipImage(activeBet.toString())}
-                        alt="Pot Chip"
-                        className="pot-chip"
-                    />
-                    <span className="pot-amount">${activeBet}</span>
-                </div>
+                <>
+                    <div className="bet-amount">Current Bet: ${activeBet}</div>
+                    <div className="pot-container">
+                        <img 
+                            src={getChipImage(activeBet.toString())}
+                            alt="Pot Chip"
+                            className="pot-chip"
+                        />
+                    </div>
+                </>
             )}
 
             {/* Player's hand(s) */}
@@ -547,7 +549,7 @@ const endRound = (status) => {
                 <button onClick={handleSplit} disabled={!canSplit() || isPaused}>Split</button>
             </div>
 
-            {/* Move status message to bottom */}
+            {/* Move status message to right side */}
             {gameStatus && (
                 <div className="game-status">
                     {gameStatus}
