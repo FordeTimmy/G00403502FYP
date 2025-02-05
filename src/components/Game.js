@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { getFirestore, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 import './Game.css';
+import { initializeQ, updateQValue, getQTable, chooseAction } from '../utils/qLearning';
+
+
 
 // Creating the deck and shuffling logic
 const createDeck = () => {
@@ -139,21 +142,43 @@ const Game = () => {
     const [isPaused, setIsPaused] = useState(false); // Pause status
     const [timer, setTimer] = useState(null); // Timer for auto-dealing
     const [activeBet, setActiveBet] = useState(null); // Add this state for the active bet chip
+    const [lastAction, setLastAction] = useState(null); // Add state for tracking last action
 
     // Move useEffect inside the component
     useEffect(() => {
         const loadSavedGame = async () => {
             if (!auth.currentUser) return;
 
-            const db = getFirestore();
-            const userRef = doc(db, 'users', auth.currentUser.uid);
-            const userSnap = await getDoc(userRef);
+            try {
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                const userSnap = await getDoc(userRef);
 
-            if (userSnap.exists() && userSnap.data().savedGame) {
-                const savedGame = userSnap.data().savedGame;
-                setCurrency(savedGame.currency || 1000);
-                setBet(savedGame.bet || 0);
-                setGameStatus(savedGame.gameStatus || '');
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    if (userData.savedGame) {
+                        const savedGame = userData.savedGame;
+                        console.log('Loading saved game state:', savedGame);
+                        setCurrency(savedGame.currency || 1000);
+                        setBet(savedGame.bet || 0);
+                        setGameStatus(savedGame.gameStatus || '');
+                    } else {
+                        // Initialize new user with default currency
+                        console.log('Initializing new user with default currency');
+                        await updateDoc(userRef, {
+                            savedGame: {
+                                currency: 1000,
+                                bet: 0,
+                                gameStatus: '',
+                                lastSaved: new Date().toISOString()
+                            }
+                        });
+                        setCurrency(1000);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading saved game:', error);
+                alert('Failed to load saved game state');
             }
         };
 
@@ -168,20 +193,49 @@ const Game = () => {
         const userRef = doc(db, 'users', auth.currentUser.uid);
 
         try {
-            await updateDoc(userRef, {
+            const gameState = {
                 savedGame: {
-                    currency,
-                    bet,
-                    gameStatus,
+                    currency: currency,
+                    bet: bet,
+                    gameStatus: gameStatus,
                     lastSaved: new Date().toISOString()
                 }
-            });
+            };
+            
+            console.log('Saving game state:', gameState);
+            await updateDoc(userRef, gameState);
             alert('Game saved successfully!');
         } catch (error) {
             console.error('Error saving game:', error);
             alert('Failed to save game');
         }
     };
+
+    // Add auto-save when currency changes
+    useEffect(() => {
+        const autoSave = async () => {
+            if (auth.currentUser && currency !== 1000) { // Only save if currency has changed from initial value
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                
+                try {
+                    await updateDoc(userRef, {
+                        savedGame: {
+                            currency: currency,
+                            bet: bet,
+                            gameStatus: gameStatus,
+                            lastSaved: new Date().toISOString()
+                        }
+                    });
+                    console.log('Auto-saved game state');
+                } catch (error) {
+                    console.error('Error auto-saving game:', error);
+                }
+            }
+        };
+
+        autoSave();
+    }, [currency]); // Trigger auto-save when currency changes
 
     // Function to check if the player can split
     const canSplit = () => {
@@ -218,6 +272,10 @@ const Game = () => {
         setPlayerHand2([]);
         setBet(betAmount); // Update the bet
         clearTimeout(timer); // Clear any existing timer if a new game starts
+
+        // Initialize Q-values for the initial game state
+        const currentState = `${calculateHandValue(playerInitialHand)}-${dealerInitialHand[0].value}-${getCardValue(playerInitialHand[0]) === getCardValue(playerInitialHand[1]) ? '1' : '0'}-1`;
+        initializeQ(currentState, ['hit', 'stand', 'doubleDown', 'split']);
     };
 
     // Function to handle the end of a round
@@ -228,13 +286,31 @@ const endRound = (status) => {
 
     // Improve result determination logic
     let result;
+    let reward;
     if (status.toLowerCase().includes('player wins')) {
+        setCurrency(prev => prev + (bet * 2)); // Return original bet plus winnings
         result = 'win';
+        reward = 10;
     } else if (status.toLowerCase().includes('push')) {
+        setCurrency(prev => prev + bet); // Return original bet on push
         result = 'push';
+        reward = 0;
     } else {
         result = 'loss';  // Consider everything else as a loss (dealer wins, player busts)
+        reward = -10;
     }
+
+    // Get the current state and update Q-value
+    const currentState = `${calculateHandValue(playerHand)}-${dealerHand[0].value}-${canSplit() ? '1' : '0'}-${isDoubleDownAllowed ? '1' : '0'}`;
+    const nextState = 'end';
+
+    if (lastAction) {
+        updateQValue(currentState, lastAction, reward, nextState);
+        console.log('Updated Q-table:', getQTable());
+    }
+
+    // Reset lastAction
+    setLastAction(null);
 
     // Only update stats for wins and losses, not pushes
     if (result !== 'push') {
@@ -288,6 +364,7 @@ const endRound = (status) => {
 // Function to handle the player hitting 
     const hit = () => {
         if (gameStatus !== 'Playing...') return; // Prevent hitting if the game is not active
+        setLastAction('hit');
 
         const newDeck = [...deck]; // Copy the current deck
         const newCard = newDeck.pop(); // Draw the top card
@@ -329,6 +406,9 @@ const endRound = (status) => {
                 setGameStatus('Playing...'); // Keep playing if not busting
             }
         }
+        
+        // Log Q-table after hit action
+        console.log('Q-table after hit:', getQTable());
     };
 
     // Dealer's turn to play
@@ -336,6 +416,7 @@ const endRound = (status) => {
         let newDeck = [...deck];
         let newDealerHand = [...dealerHand];
 
+        // Dealer must hit on 16 and stand on 17
         while (calculateHandValue(newDealerHand) < 17) {
             const newCard = newDeck.pop();
             newDealerHand.push(newCard);
@@ -345,88 +426,109 @@ const endRound = (status) => {
         setDeck(newDeck);
 
         const dealerTotal = calculateHandValue(newDealerHand);
-        const hand1Total = calculateHandValue(playerHand1);
-        const hand2Total = calculateHandValue(playerHand2);
 
-        // Determine result for each hand if split
         if (isSplit) {
+            const hand1Total = calculateHandValue(playerHand1);
+            const hand2Total = calculateHandValue(playerHand2);
             let resultMessage = '';
 
+            // Handle first split hand
             if (hand1Total > 21) {
                 resultMessage += 'Hand 1 Bust! Dealer wins. ';
             } else if (dealerTotal > 21 || hand1Total > dealerTotal) {
                 resultMessage += 'Hand 1 Wins! ';
-                setCurrency(currency + bet * 2);
             } else if (dealerTotal === hand1Total) {
                 resultMessage += 'Hand 1 Push. ';
-                setCurrency(currency + bet);
             } else {
                 resultMessage += 'Dealer wins Hand 1. ';
             }
 
+            // Handle second split hand
             if (hand2Total > 21) {
                 resultMessage += 'Hand 2 Bust! Dealer wins.';
             } else if (dealerTotal > 21 || hand2Total > dealerTotal) {
                 resultMessage += 'Hand 2 Wins!';
-                setCurrency(currency + bet * 2);
             } else if (dealerTotal === hand2Total) {
                 resultMessage += 'Hand 2 Push.';
-                setCurrency(currency + bet);
             } else {
                 resultMessage += 'Dealer wins Hand 2.';
             }
 
-            setGameStatus(resultMessage);
+            endRound(resultMessage);
         } else {
             const playerTotal = calculateHandValue(playerHand);
+            
+            // Handle regular game outcome
             if (playerTotal > 21) {
-                endRound('Player busts! Dealer wins.');  // This will be counted as a loss
+                endRound('Player busts! Dealer wins.');
             } else if (dealerTotal > 21) {
-                setCurrency(currency + bet * 2);
-                endRound('Player wins!');  // This will be counted as a win
+                endRound('Player wins!');
             } else if (playerTotal > dealerTotal) {
-                setCurrency(currency + bet * 2);
-                endRound('Player wins!');  // This will be counted as a win
+                endRound('Player wins!');
             } else if (dealerTotal === playerTotal) {
-                setCurrency(currency + bet);
-                endRound('Push.');  // This will be counted as a push
+                endRound('Push.');
             } else {
-                endRound('Dealer wins.');  // This will be counted as a loss
+                endRound('Dealer wins.');
             }
         }
     };
 
     const stand = () => {
         if (gameStatus === 'Playing...') {
+            setLastAction('stand');
             if (isSplit && currentHand === 1) {
                 setCurrentHand(2); // Switch to Hand 2
                 setGameStatus('Playing...'); // Reset status 
             } else {
                 dealerTurn(); // Only call dealerTurn when both hands are done or if not split
             }
+            // Log Q-table after stand action
+            console.log('Q-table after stand:', getQTable());
         }
     };
 
     // Function to double down
     const doubleDown = () => {
         if (isDoubleDownAllowed && bet <= currency) {
+            setLastAction('doubleDown');
             setCurrency(currency - bet);
             setBet(bet * 2);
             setIsDoubleDownAllowed(false); // Disable double down after it’s used
             hit(); // Automatically hit after doubling down
             stand(); // End the player's turn after doubling down
+            
+            // Log Q-table after double down action
+            console.log('Q-table after double down:', getQTable());
         }
     };
 
     // Function to split the hand
     const handleSplit = () => {
         if (canSplit()) {
+            setLastAction('split');
             setIsSplit(true);
             setPlayerHand1([playerHand[0]]);
             setPlayerHand2([playerHand[1]]);
             setCurrency(currency - bet); // Deduct additional bet for the second hand
             setCurrentHand(1); // Start with the first hand
+            
+            // Log Q-table after split action
+            console.log('Q-table after split:', getQTable());
         }
+    };
+
+    const getAIRecommendation = () => {
+        // Only provide recommendation during active gameplay and when hands are dealt
+        if (gameStatus !== 'Playing...' || !playerHand.length || !dealerHand.length) return '';
+        
+        const currentState = `${calculateHandValue(playerHand)}-${dealerHand[0].value}-${canSplit() ? '1' : '0'}-${isDoubleDownAllowed ? '1' : '0'}`;
+        const recommendation = chooseAction(currentState);
+        
+        // Only recommend valid actions
+        if (recommendation === 'split' && !canSplit()) return 'hit';
+        if (recommendation === 'doubleDown' && !isDoubleDownAllowed) return 'hit';
+        
+        return recommendation;
     };
 
     return (
@@ -458,6 +560,13 @@ const endRound = (status) => {
                     </div>
                 ))}
             </div>
+
+            {/* Add AI suggestion before the dealer's hand */}
+            {gameStatus === 'Playing...' && (
+                <div className="ai-suggestion">
+                    <p>AI Suggestion: {getAIRecommendation()}</p>
+                </div>
+            )}
 
             {/* Dealer's hand */}
             <div className="dealer-hand">
