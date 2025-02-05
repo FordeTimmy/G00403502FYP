@@ -361,3 +361,23 @@ body {
     overflow: hidden;
 }
 
+.ai-suggestion {
+    position: absolute;
+    bottom: 20%;
+    right: 25%;
+    background-color: rgba(40, 44, 52, 0.9);
+    color: white;
+    padding: 15px 20px;
+    font-size: 1.2em;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    border: 2px solid gold;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.ai-suggestion p {
+    margin: 0;
+    text-transform: capitalize;
+}
+
