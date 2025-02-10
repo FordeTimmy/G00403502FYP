@@ -1,0 +1,42 @@
+.home-container {
+    min-height: 100vh;
+    background-color: #0B6623;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.home-container h1 {
+    color: gold;
+    font-size: 4rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    margin-bottom: 40px;
+    font-family: 'Times New Roman', serif;
+}
+
+.button-container {
+    display: flex;
+    gap: 20px;
+    flex-direction: column;
+    align-items: center;
+}
+
+.start-button {
+    background: #FFD700;
+    color: black;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.start-button:hover {
+    background: #DAA520;
+    transform: translateY(-2px);
+}

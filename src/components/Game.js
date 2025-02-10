@@ -235,7 +235,7 @@ const Game = () => {
         };
 
         autoSave();
-    }, [currency]); // Trigger auto-save when currency changes
+    }, [currency, bet, gameStatus]); // Trigger auto-save when currency changes
 
     // Function to check if the player can split
     const canSplit = () => {
