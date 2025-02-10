@@ -40,3 +40,21 @@
     background: #DAA520;
     transform: translateY(-2px);
 }
+
+.login-button {
+    background: #4CAF50;
+    color: white;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.login-button:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}
