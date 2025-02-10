@@ -1,105 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { auth } from '../firebaseConfig';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import './Login.css';
 
-function Login() {
-    const navigate = useNavigate();
+const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-
-    console.log('Login component rendering');
-
-    useEffect(() => {
-        // Check and clear any existing session
-        if (auth.currentUser) {
-            signOut(auth).then(() => {
-                console.log('Existing session cleared');
-            }).catch((error) => {
-                console.error('Error clearing session:', error);
-            });
-        }
-    }, []);
-
-    const handleSignUp = async (e) => {
-        e.preventDefault();
-        try {
-            await createUserWithEmailAndPassword(auth, email, password);
-            navigate('/game');
-        } catch (error) {
-            setError(error.message);
-        }
-    };
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        console.log('Login attempt with email:', email);
         try {
-            console.log('Attempting Firebase authentication...');
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-            console.log('Firebase auth successful:', user.uid);
-
-            console.log('Requesting ID token...');
-            const idToken = await user.getIdToken();
-            console.log('ID token received:', idToken.substring(0, 20) + '...');
-            
-            console.log('Sending request to backend...');
-            const response = await fetch('http://localhost:5000/api/protected', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${idToken}`,
-                },
-            });
-
-            if (!response.ok) {
-                console.error('Backend response not OK:', response.status, response.statusText);
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('Backend authentication successful:', data);
-            console.log('Login successful, navigating to game');
+            await signInWithEmailAndPassword(auth, email, password);
             navigate('/game');
         } catch (error) {
-            console.error('Login process failed:', error);
-            console.error('Error details:', {
-                code: error.code,
-                message: error.message,
-                stack: error.stack
-            });
-            setError(error.message);
+            setError('Invalid email or password');
         }
     };
 
     return (
         <div className="login-container">
-            <h2>Login / Sign Up</h2>
-            {error && <p className="error">{error}</p>}
-            <form>
-                <div>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
+            <div className="login-card">
+                <h1>Casino Login</h1>
+                {error && <div className="error-message">{error}</div>}
+                <form onSubmit={handleLogin}>
+                    <div className="form-group">
+                        <label>Email</label>
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Password</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <button type="submit" className="login-button">Login</button>
+                </form>
+                <div className="additional-options">
+                    <button onClick={() => navigate('/')} className="back-button">
+                        Back to Home
+                    </button>
+                    <button onClick={() => navigate('/register')} className="register-button">
+                        Create Account
+                    </button>
                 </div>
-                <div>
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                </div>
-                <button onClick={handleLogin}>Login</button>
-                <button onClick={handleSignUp}>Sign Up</button>
-            </form>
+            </div>
+            <div className="decorative-chips">
+                <div className="chip red"></div>
+                <div className="chip blue"></div>
+                <div className="chip black"></div>
+            </div>
         </div>
     );
-}
+};
 
 export default Login;
