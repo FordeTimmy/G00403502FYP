@@ -58,3 +58,66 @@
     background: #45a049;
     transform: translateY(-2px);
 }
+
+.settings-button {
+    background: #4A90E2;
+    color: white;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.settings-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.settings-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    min-width: 300px;
+}
+
+.setting-item {
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.close-button {
+    background: #dc3545;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+.dark-mode {
+    background-color: #1a1a1a;
+}
+
+.dark-mode .settings-content {
+    background: #333;
+    color: white;
+}
+
+.dark-mode h1 {
+    color: #ffd700;
+}
