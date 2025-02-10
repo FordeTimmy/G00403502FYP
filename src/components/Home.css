@@ -121,3 +121,81 @@
 .dark-mode h1 {
     color: #ffd700;
 }
+
+.rules-button {
+    background: #FF6B6B;
+    color: white;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.rules-button:hover {
+    background: #FF5252;
+    transform: translateY(-2px);
+}
+
+.rules-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.rules-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.rules-section {
+    margin: 1.5rem 0;
+}
+
+.rules-section h3 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.rules-section ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.rules-section li {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.rules-section li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #FF6B6B;
+}
+
+.dark-mode .rules-content {
+    background: #333;
+    color: white;
+}
+
+.dark-mode .rules-section h3 {
+    color: #FF6B6B;
+}
