@@ -14,8 +14,10 @@ const Login = () => {
         e.preventDefault();
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            navigate('/game');
+            console.log("Login successful, navigating to profile...");
+            navigate('/profile'); // Ensure this line executes
         } catch (error) {
+            console.error("Login error:", error);
             setError('Invalid email or password');
         }
     };

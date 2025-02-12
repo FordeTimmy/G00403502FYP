@@ -36,4 +36,8 @@ setPersistence(auth, browserSessionPersistence)
         console.error("Auth persistence error:", error);
     });
 
+auth.onAuthStateChanged((user) => {
+    console.log("Auth state changed:", user ? "User logged in" : "No user");
+});
+
 export { analytics, auth, signOut };

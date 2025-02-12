@@ -1,0 +1,90 @@
+.profile-container {
+    min-height: 100vh;
+    background-color: #0B6623;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.profile-container h1 {
+    color: gold;
+    font-size: 3rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    margin-bottom: 40px;
+}
+
+.profile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.game-button {
+    background: #FFD700;
+    color: black;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    font-weight: bold;
+}
+
+.game-button:hover {
+    transform: translateY(-2px);
+    background: #DAA520;
+}
+
+.back-button {
+    background: #4CAF50;
+    color: white;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.profile-button {
+    background: #4A90E2;
+    color: white;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.profile-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.profile-content {
+    background: #1f1f1f;
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid gold;
+    min-width: 300px;
+}
+
+.profile-content h2 {
+    color: gold;
+    margin-bottom: 20px;
+}
