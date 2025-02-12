@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './UserProfile.css';
 import { auth } from '../firebaseConfig';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import PlayerStatsChart from './PlayerStatsChart';
 
 const UserProfile = () => {
     const navigate = useNavigate();
@@ -55,31 +56,36 @@ const UserProfile = () => {
             {/* Stats Modal */}
             {showStats && (
                 <div className="profile-modal">
-                    <div className="profile-content">
+                    <div className="profile-content stats-content">
                         <h2>Player Statistics</h2>
                         {stats ? (
-                            <div className="stats-grid">
-                                <div className="stat-item">
-                                    <span>Games Played:</span>
-                                    <span>{stats.gamesPlayed || 0}</span>
+                            <>
+                                <div className="stats-grid">
+                                    <div className="stat-item">
+                                        <span>Games Played:</span>
+                                        <span>{stats.gamesPlayed || 0}</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Hands Won:</span>
+                                        <span>{stats.handsWon || 0}</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Hands Lost:</span>
+                                        <span>{stats.handsLost || 0}</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Total Won:</span>
+                                        <span>${stats.totalAmountWon || 0}</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span>Total Lost:</span>
+                                        <span>${stats.totalAmountLost || 0}</span>
+                                    </div>
                                 </div>
-                                <div className="stat-item">
-                                    <span>Hands Won:</span>
-                                    <span>{stats.handsWon || 0}</span>
+                                <div className="stats-charts">
+                                    <PlayerStatsChart stats={stats} />
                                 </div>
-                                <div className="stat-item">
-                                    <span>Hands Lost:</span>
-                                    <span>{stats.handsLost || 0}</span>
-                                </div>
-                                <div className="stat-item">
-                                    <span>Total Won:</span>
-                                    <span>${stats.totalAmountWon || 0}</span>
-                                </div>
-                                <div className="stat-item">
-                                    <span>Total Lost:</span>
-                                    <span>${stats.totalAmountLost || 0}</span>
-                                </div>
-                            </div>
+                            </>
                         ) : (
                             <p>No statistics available</p>
                         )}

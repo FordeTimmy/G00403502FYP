@@ -125,3 +125,36 @@
     color: gold;
     margin-bottom: 20px;
 }
+
+.stats-content {
+    width: 80%;
+    max-width: 1000px;
+}
+
+.charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.chart-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    width: 45%;
+    min-width: 300px;
+}
+
+.chart-wrapper {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.chart-item h3 {
+    color: gold;
+    margin-bottom: 10px;
+}
