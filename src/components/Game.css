@@ -35,10 +35,16 @@
 }
 
 .chip {
-    height: 80px; /* Keep chips circular */
+    width: 60px !important;
+    height: 60px !important;
     border-radius: 50%;
-    animation: chipEntrance 0.5s ease-out forwards;
-    opacity: 0;
+    cursor: pointer;
+    object-fit: contain;
+    display: block;
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
 }
 
 .chip.disabled {
@@ -70,12 +76,10 @@
 
 .chip-container {
     position: relative;
-    display: inline-block;
-}
-
-.chip {
-    height: 80px;
-    width: 80px;
+    width: 60px;
+    height: 60px;
+    margin: 10px 0;
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 50%;
 }
 
@@ -89,6 +93,7 @@
     color: white;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     pointer-events: none;
+    z-index: 1;
 }
 
 @keyframes slideIn {
@@ -102,16 +107,6 @@
     }
 }
 
-@keyframes chipMove {
-    from {
-        transform: translateY(50px) scale(1.2);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
-}
 
 .card {
     width: 80px;
@@ -133,14 +128,16 @@
 
 .betting-chips {
     position: fixed;
-    top: 55%;
-    right: 15%;
+    top: 50%;
+    right: 40px;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     gap: 20px;
     padding: 20px;
     z-index: 20;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
 }
 
 .bet-amount {
@@ -155,18 +152,6 @@
     border-radius: 8px;
     font-size: 16px;
     white-space: nowrap; /* Prevents text from wrapping */
-}
-
-
-@keyframes chipEntrance {
-    0% {
-        transform: translateY(100px) rotate(180deg);
-        opacity: 0;
-    }
-    100% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 1;
-    }
 }
 
 @keyframes cardDeal {
@@ -206,9 +191,33 @@
 }
 
 .pot-chip {
-    width: 50px;
-    height: auto;
-    animation: slideToCenter 0.5s ease-out forwards;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: contain;
+    animation: none !important;
+    transform: translateY(0) !important;
+    transition: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.pot-chip-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pot-chip-label {
+    position: absolute;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 2;
 }
 
 .pot-container {
@@ -221,14 +230,6 @@
     align-items: center;
     gap: 5px;
     z-index: 25;
-}
-
-.pot-chip {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-    animation: slideToCenter 0.5s ease-out forwards;
 }
 
 .pot-amount {

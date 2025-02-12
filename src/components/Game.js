@@ -86,6 +86,22 @@ const updateUserStats = async (gameResult, betAmount = 0) => {
 };
 
 const Game = () => {
+    const [renderTrigger, setRenderTrigger] = useState(false);
+    
+    // Add debug logging for chip images
+    useEffect(() => {
+        console.log("Chip images:");
+        console.log("Red chip:", getChipImage('10'));
+        console.log("Green chip:", getChipImage('20'));
+        console.log("Blue chip:", getChipImage('50'));
+        console.log("Black chip:", getChipImage('100'));
+        
+        // Force re-render after short delay
+        setTimeout(() => {
+            setRenderTrigger(prev => !prev);
+        }, 500);
+    }, []);
+
     // Update card image helper to use Deck of Cards API CDN
     const getCardImage = (card) => {
         if (!card) return '';
@@ -119,10 +135,10 @@ const Game = () => {
     // Update chip image helper with new values
     const getChipImage = (value) => {
         const chipMap = {
-            '10': '/images/chips/redchip.png',
-            '20': '/images/chips/greenchip.png',
-            '50': '/images/chips/bluechip.png',
-            '100': '/images/chips/blackchip.png'
+            '10': './images/chips/redchip.png',
+            '20': './images/chips/greenchip.png',
+            '50': './images/chips/bluechip.png',
+            '100': './images/chips/blackchip.png'
         };
         return chipMap[value];
     };
@@ -588,11 +604,14 @@ const endRound = (status) => {
                 <>
                     <div className="bet-amount">Current Bet: ${activeBet}</div>
                     <div className="pot-container">
-                        <img 
-                            src={getChipImage(activeBet.toString())}
-                            alt="Pot Chip"
-                            className="pot-chip"
-                        />
+                        <div className="pot-chip-container">
+                            <img 
+                                src={getChipImage(activeBet.toString())}
+                                alt="Pot Chip"
+                                className="pot-chip"
+                            />
+                            <span className="pot-chip-label">{activeBet}</span>
+                        </div>
                     </div>
                 </>
             )}
