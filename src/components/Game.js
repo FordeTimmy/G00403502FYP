@@ -3,6 +3,7 @@ import { getFirestore, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore
 import { auth } from '../firebaseConfig';
 import './Game.css';
 import { initializeQ, updateQValue, getQTable, chooseAction } from '../utils/qLearning';
+import { simulateGames } from '../utils/simulateGames';
 
 
 
@@ -547,6 +548,36 @@ const endRound = (status) => {
         return recommendation;
     };
 
+    // Add useEffect to run initial AI training
+    useEffect(() => {
+        const initializeAI = async () => {
+            console.log('Starting AI training...');
+            try {
+                await simulateGames(10000);
+                console.log('AI training complete!');
+            } catch (error) {
+                console.error('AI training error:', error);
+            }
+        };
+
+        initializeAI();
+    }, []);
+
+    // Add a function to manually trigger training
+    const handleRetrainAI = async () => {
+        if (window.confirm('This will train the AI with 10,000 games. Continue?')) {
+            setGameStatus('Training AI...');
+            try {
+                await simulateGames(10000);
+                setGameStatus('AI training complete!');
+                setTimeout(() => setGameStatus(''), 3000);
+            } catch (error) {
+                console.error('AI training error:', error);
+                setGameStatus('AI training failed');
+            }
+        }
+    };
+
     return (
         <div className="casino-table">
             {/* Updated game header */}
@@ -675,6 +706,13 @@ const endRound = (status) => {
                 <button onClick={stand} disabled={gameStatus !== 'Playing...' || isPaused}>Stand</button>
                 <button onClick={doubleDown} disabled={!isDoubleDownAllowed || isPaused}>Double Down</button>
                 <button onClick={handleSplit} disabled={!canSplit() || isPaused}>Split</button>
+                <button 
+                    onClick={handleRetrainAI}
+                    className="train-button"
+                    disabled={gameStatus === 'Playing...' || isPaused}
+                >
+                    Train AI
+                </button>
             </div>
 
             {/* Move status message to right side */}

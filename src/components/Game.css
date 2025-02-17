@@ -290,6 +290,20 @@
     cursor: not-allowed;
 }
 
+.train-button {
+    background: #9C27B0 !important;
+    color: white !important;
+}
+
+.train-button:hover {
+    background: #7B1FA2 !important;
+}
+
+.train-button:disabled {
+    background: #ccc !important;
+    cursor: not-allowed;
+}
+
 .game-header {
     background: rgba(0, 0, 0, 0.7);
     padding: 20px;
