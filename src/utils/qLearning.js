@@ -1,15 +1,15 @@
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 
-// Optimized learning parameters
+// Finely tuned learning parameters
 let QTable = {};
-let epsilon = 0.9;  // Start with high exploration
-const epsilonDecay = 0.997;  // Slower decay for better exploration
-const minEpsilon = 0.15;  // Higher minimum exploration rate
-const alpha = 0.03;  // Slightly higher learning rate for faster adaptation
-const gamma = 0.99;  // Maximum future reward consideration
-const maxMemory = 50000;  // Increased memory size for better learning
-let experienceMemory = [];
+let epsilon = 0.95;  // Higher initial exploration
+const epsilonDecay = 0.9995;  // Very slow decay for thorough exploration
+const minEpsilon = 0.2;  // Higher minimum to maintain some exploration
+const alpha = 0.02;  // Slower learning rate for stability
+const gamma = 0.95;  // Slightly reduced future reward weight
+const maxMemory = 100000;  // Much larger memory for better learning
+const batchSize = 64;  // Larger batch size for better learning
 
 export const initializeQ = (state, actions) => {
     if (!QTable[state]) {
@@ -27,7 +27,7 @@ const addToMemory = (experience) => {
     }
 };
 
-const sampleFromMemory = (batchSize = 32) => {
+const sampleFromMemory = (batchSize = 64) => {
     if (experienceMemory.length < batchSize) return experienceMemory;
     const samples = [];
     for (let i = 0; i < batchSize; i++) {
@@ -99,8 +99,8 @@ export const updateQValue = (state, action, reward, nextState) => {
     // Add to experience memory
     addToMemory({ state, action, reward, nextState });
 
-    // Learn from batch of experiences
-    const experiences = sampleFromMemory();
+    // More frequent learning from experiences
+    const experiences = sampleFromMemory(batchSize);
     experiences.forEach(exp => {
         if (!QTable[exp.state]) initializeQ(exp.state, ['hit', 'stand', 'doubleDown', 'split']);
         if (!QTable[exp.nextState]) initializeQ(exp.nextState, ['hit', 'stand', 'doubleDown', 'split']);
@@ -110,7 +110,7 @@ export const updateQValue = (state, action, reward, nextState) => {
         QTable[exp.state][exp.action] = oldQ + alpha * (exp.reward + gamma * maxNextQ - oldQ);
     });
 
-    // Decay epsilon
+    // Slower epsilon decay
     epsilon = Math.max(minEpsilon, epsilon * epsilonDecay);
 };
 
