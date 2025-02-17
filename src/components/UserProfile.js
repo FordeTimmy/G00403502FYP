@@ -4,12 +4,14 @@ import './UserProfile.css';
 import { auth } from '../firebaseConfig';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import PlayerStatsChart from './PlayerStatsChart';
+import { simulateGames } from '../utils/simulateGames';
 
 const UserProfile = () => {
     const navigate = useNavigate();
     const [showProfile, setShowProfile] = useState(false);
     const [showStats, setShowStats] = useState(false);
     const [stats, setStats] = useState(null);
+    const [isTraining, setIsTraining] = useState(false);
 
     const handleViewStats = async () => {
         if (auth.currentUser) {
@@ -21,6 +23,17 @@ const UserProfile = () => {
             }
         }
         setShowStats(true);
+    };
+
+    const handleTrainAI = async () => {
+        setIsTraining(true);
+        try {
+            const results = await simulateGames(10000);
+            console.log(`Training Results - Wins: ${results.winCount}, Losses: ${results.lossCount}`);
+        } catch (error) {
+            console.error('Training error:', error);
+        }
+        setIsTraining(false);
     };
 
     return (
