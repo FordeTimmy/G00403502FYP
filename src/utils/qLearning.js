@@ -1,15 +1,15 @@
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 
-// Further optimized learning parameters
+// Accelerated learning parameters
 let QTable = {};
-let epsilon = 0.98;  // Even higher initial exploration
-const epsilonDecay = 0.9998;  // Much slower decay
-const minEpsilon = 0.25;  // Higher minimum for continued exploration
-const alpha = 0.015;  // More refined learning rate
-const gamma = 0.98;  // Higher future reward consideration
-const maxMemory = 200000;  // Double memory size
-const batchSize = 128;  // Larger batch size for better learning
+let epsilon = 0.95;  // Still high exploration but slightly reduced
+const epsilonDecay = 0.995;  // Faster decay
+const minEpsilon = 0.1;  // Lower minimum for more exploitation
+const alpha = 0.05;  // Higher learning rate for faster updates
+const gamma = 0.95;  // Slightly reduced to focus more on immediate rewards
+const maxMemory = 50000;  // Reduced memory size for faster processing
+const batchSize = 32;  // Smaller batch size for faster updates
 
 // Initialize experience memory array
 let experienceMemory = [];
