@@ -1,6 +1,6 @@
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
-import { chooseAction, updateQValue, getQTable } from './qLearning';
+import { chooseAction, updateQValue, getQTable, loadQTable, saveQTable } from './qLearning';
 
 // Helper functions
 const calculateHandValue = (hand) => {
@@ -134,25 +134,27 @@ const runSimulation = async (numGames) => {
     return { winCount, lossCount };
 };
 
-export const simulateGames = async (numGames = 1000, iterations = 10) => {
-    console.log(`Starting AI training: ${numGames} games × ${iterations} iterations = ${numGames * iterations} total games`);
+export const simulateGames = async (numGames = 2000, iterations = 20) => {
+    console.log('Loading previous Q-table...');
+    await loadQTable();
+
+    console.log(`Starting enhanced training: ${numGames} games × ${iterations} iterations`);
     let totalWins = 0;
-    let totalLosses = 0;
+    let totalGames = 0;
 
     for (let i = 0; i < iterations; i++) {
-        console.log(`Starting iteration ${i + 1} of ${iterations}`);
         const { winCount, lossCount } = await runSimulation(numGames);
         totalWins += winCount;
-        totalLosses += lossCount;
-        
-        const iterationWinRate = (winCount / numGames) * 100;
-        console.log(`Iteration ${i + 1} complete - Win rate: ${iterationWinRate.toFixed(2)}%`);
-        
-        // Save progress every iteration
-        await saveQTableToFirebase();
+        totalGames += numGames;
+
+        // Save progress every 5 iterations
+        if ((i + 1) % 5 === 0) {
+            await saveQTable();
+            console.log(`Progress saved at iteration ${i + 1}`);
+            console.log(`Current win rate: ${((totalWins/totalGames)*100).toFixed(2)}%`);
+        }
     }
 
-    const finalWinRate = (totalWins / (numGames * iterations)) * 100;
-    console.log(`Training complete! Overall win rate: ${finalWinRate.toFixed(2)}%`);
-    return { totalWins, totalLosses };
+    await saveQTable();
+    return { totalWins, totalGames };
 };
