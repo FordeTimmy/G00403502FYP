@@ -551,9 +551,9 @@ const endRound = (status) => {
     // Add useEffect to run initial AI training
     useEffect(() => {
         const initializeAI = async () => {
-            console.log('Starting AI training with 100,000 games...');
+            console.log('Starting AI training with 10,000 games...');
             try {
-                await simulateGames(100000);
+                await simulateGames(10000);
                 console.log('AI training complete!');
             } catch (error) {
                 console.error('AI training error:', error);
@@ -565,10 +565,10 @@ const endRound = (status) => {
 
     // Add a function to manually trigger training
     const handleRetrainAI = async () => {
-        if (window.confirm('This will train the AI with 100,000 games. Continue?')) {
+        if (window.confirm('This will train the AI with 10,000 games. Continue?')) {
             setGameStatus('Training AI...');
             try {
-                await simulateGames(100000);
+                await simulateGames(10000);
                 setGameStatus('AI training complete!');
                 setTimeout(() => setGameStatus(''), 3000);
             } catch (error) {

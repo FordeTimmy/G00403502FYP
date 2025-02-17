@@ -3,12 +3,12 @@ import { auth } from '../firebaseConfig';
 
 // Change from const to let for the QTable
 let QTable = {};
-let epsilon = 0.5;
-const epsilonDecay = 0.995;
+let epsilon = 0.7;
+const epsilonDecay = 0.99;
 const minEpsilon = 0.2;
 const alpha = 0.01;  // Learning rate
 const gamma = 0.99;  // Discount factor
-const maxMemory = 10000;
+const maxMemory = 20000;
 let experienceMemory = [];
 
 export const initializeQ = (state, actions) => {
@@ -37,12 +37,17 @@ const sampleFromMemory = (batchSize = 32) => {
     return samples;
 };
 
+export const initializeQTable = () => {
+    QTable = {}; // Reset Q-table
+    console.log('Q-table initialized');
+};
+
 export const loadQTable = async () => {
     try {
         const db = getFirestore();
-        // Change path to use user's document
         if (!auth.currentUser) {
-            console.log('No user logged in, using local Q-table');
+            console.log('No user logged in, initializing new Q-table');
+            initializeQTable();
             return;
         }
 
@@ -52,16 +57,13 @@ export const loadQTable = async () => {
         if (docSnap.exists()) {
             QTable = { ...docSnap.data().QTable };
             console.log('Q-table loaded successfully!');
-            epsilon = 0.5;
-            alpha = 0.02;
         } else {
             console.log('No Q-table found, initializing new one');
-            QTable = {};
+            initializeQTable();
         }
     } catch (error) {
         console.error('Error loading Q-table:', error);
-        console.log('Using default Q-table');
-        QTable = {};
+        initializeQTable();
     }
 };
 
