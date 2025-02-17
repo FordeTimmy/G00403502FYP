@@ -1,13 +1,13 @@
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth } from '../firebaseConfig';
 
-// src/utils/qLearning.js
-
+// Change from const to let for the QTable
 let QTable = {};
-let epsilon = 0.9;
+let epsilon = 0.5;
 const epsilonDecay = 0.995;
-const minEpsilon = 0.1;
-const alpha = 0.05;  // Learning rate
-const gamma = 0.95;  // Discount factor
+const minEpsilon = 0.2;
+const alpha = 0.01;  // Learning rate
+const gamma = 0.99;  // Discount factor
 const maxMemory = 10000;
 let experienceMemory = [];
 
@@ -40,23 +40,41 @@ const sampleFromMemory = (batchSize = 32) => {
 export const loadQTable = async () => {
     try {
         const db = getFirestore();
-        const docSnap = await getDoc(doc(db, 'ai_training', 'q_table'));
+        // Change path to use user's document
+        if (!auth.currentUser) {
+            console.log('No user logged in, using local Q-table');
+            return;
+        }
+
+        const docRef = doc(db, 'users', auth.currentUser.uid, 'training', 'q_table');
+        const docSnap = await getDoc(docRef);
+        
         if (docSnap.exists()) {
-            QTable = docSnap.data().QTable;
+            QTable = { ...docSnap.data().QTable };
             console.log('Q-table loaded successfully!');
-            // Adjust learning parameters after loading
-            epsilon = 0.5; // Reduce exploration
-            alpha = 0.02; // Fine-tune learning
+            epsilon = 0.5;
+            alpha = 0.02;
+        } else {
+            console.log('No Q-table found, initializing new one');
+            QTable = {};
         }
     } catch (error) {
         console.error('Error loading Q-table:', error);
+        console.log('Using default Q-table');
+        QTable = {};
     }
 };
 
 export const saveQTable = async () => {
     try {
+        if (!auth.currentUser) {
+            console.log('No user logged in, saving Q-table locally');
+            localStorage.setItem('q_table', JSON.stringify(QTable));
+            return;
+        }
+
         const db = getFirestore();
-        await setDoc(doc(db, 'ai_training', 'q_table'), { 
+        await setDoc(doc(db, 'users', auth.currentUser.uid, 'training', 'q_table'), {
             QTable,
             lastUpdated: new Date().toISOString(),
             trainingStats: {
@@ -67,6 +85,8 @@ export const saveQTable = async () => {
         console.log('Q-table saved successfully!');
     } catch (error) {
         console.error('Error saving Q-table:', error);
+        // Fallback to localStorage
+        localStorage.setItem('q_table', JSON.stringify(QTable));
     }
 };
 
