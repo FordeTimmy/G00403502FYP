@@ -57,26 +57,43 @@ const saveQTableToFirebase = async () => {
     }
 };
 
-const calculateReward = (playerTotal, dealerTotal, numCards) => {
-    if (playerTotal > 21) {
-        return -15; // Bust penalty
-    }
+const calculateReward = (playerTotal, dealerTotal, numCards, betAmount) => {
+    let reward = 0;
+
+    // Perfect hands
     if (playerTotal === 21 && numCards === 2) {
-        return 20; // Blackjack bonus
+        reward = 30; // Natural blackjack bonus
+    } else if (playerTotal === 21) {
+        reward = 20; // Perfect hand
+    } else if (playerTotal === 20) {
+        reward = 15; // Near perfect hand
     }
-    if (playerTotal === 21) {
-        return 15; // Perfect hand
+    
+    // Winning conditions
+    else if (dealerTotal > 21) {
+        reward = 10 + Math.min(5, (21 - playerTotal)); // Dealer bust with bonus for better hands
+    } else if (playerTotal > dealerTotal && playerTotal < 21) {
+        reward = 10 + (playerTotal - dealerTotal); // Better winning margin = higher reward
     }
-    if (playerTotal === 20) {
-        return 10; // Near perfect
+    
+    // Losing conditions
+    else if (playerTotal > 21) {
+        reward = -15 - Math.min(5, (playerTotal - 21)); // Bigger bust = bigger penalty
+    } else if (playerTotal < dealerTotal) {
+        reward = -10 - (dealerTotal - playerTotal); // Bigger loss = bigger penalty
     }
-    if (dealerTotal > 21) {
-        return 10 + (21 - playerTotal); // Dealer bust bonus
+
+    // Betting strategy rewards
+    if (betAmount >= 50) {
+        reward *= 1.2; // 20% bonus for aggressive betting
     }
-    if (playerTotal > dealerTotal) {
-        return 10 + (playerTotal - dealerTotal); // Winning margin bonus
+
+    // Safe play rewards
+    if (playerTotal >= 17 && playerTotal <= 21) {
+        reward += 5; // Bonus for achieving safe hand
     }
-    return -10; // Loss
+
+    return reward;
 };
 
 const runSimulation = async (numGames) => {
@@ -90,21 +107,26 @@ const runSimulation = async (numGames) => {
         let state = `${calculateHandValue(playerHand)}-${dealerHand[0].value}-0-1`;
         let gameOver = false;
         let reward = 0;
+        let bet = 10; // Default bet amount
 
         while (!gameOver) {
             const action = chooseAction(state);
-            let playerTotal = calculateHandValue(playerHand); // Declare playerTotal here
+            let playerTotal = calculateHandValue(playerHand);
+            const previousTotal = playerTotal;
 
             switch (action) {
                 case 'hit':
                     playerHand.push(deck.pop());
-                    playerTotal = calculateHandValue(playerHand); // Update playerTotal
+                    playerTotal = calculateHandValue(playerHand);
                     if (playerTotal > 21) {
-                        reward = calculateReward(playerTotal, 0, playerHand.length);
+                        reward = calculateReward(playerTotal, 0, playerHand.length, bet);
                         gameOver = true;
                         lossCount++;
-                    } else if (playerTotal >= 17) {
-                        reward = 5; // Reward for safe hit
+                    } else if (playerTotal > previousTotal && playerTotal <= 21) {
+                        reward = 5; // Reward for successful hit
+                        if (playerTotal >= 17) {
+                            reward += 3; // Additional reward for safe hit
+                        }
                     }
                     break;
 
@@ -113,7 +135,7 @@ const runSimulation = async (numGames) => {
                         dealerHand.push(deck.pop());
                     }
                     const dealerTotal = calculateHandValue(dealerHand);
-                    reward = calculateReward(playerTotal, dealerTotal, playerHand.length);
+                    reward = calculateReward(playerTotal, dealerTotal, playerHand.length, bet);
                     gameOver = true;
                     if (reward > 0) winCount++;
                     else if (reward < 0) lossCount++;

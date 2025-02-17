@@ -3,11 +3,12 @@ import { auth } from '../firebaseConfig';
 
 // Change from const to let for the QTable
 let QTable = {};
-let epsilon = 0.7;
-const epsilonDecay = 0.99;
-const minEpsilon = 0.2;
-const alpha = 0.01;  // Learning rate
-const gamma = 0.99;  // Discount factor
+// Adjust hyperparameters for better learning
+let epsilon = 0.7;  // Start with moderate exploration
+const epsilonDecay = 0.998;  // Faster decay
+const minEpsilon = 0.1;  // Minimum exploration rate
+const alpha = 0.01;  // Slower, more stable learning
+const gamma = 0.99;  // Focus on long-term rewards
 const maxMemory = 20000;
 let experienceMemory = [];
 
