@@ -1,15 +1,15 @@
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 
-// Further optimized learning parameters for higher win rate
+// Optimized parameters for higher win rate
 let QTable = {};
-let epsilon = 0.99;  // Even higher initial exploration
-const epsilonDecay = 0.9999;  // Much slower decay for better learning
-const minEpsilon = 0.3;  // Higher minimum to keep exploring good options
-const alpha = 0.08;  // Higher learning rate for faster adaptation
-const gamma = 0.99;  // Maximum emphasis on future rewards
-const maxMemory = 300000;  // Much larger memory for better pattern recognition
-const batchSize = 256;  // Larger batch size for better learning
+let epsilon = 0.999;  // Near-perfect initial exploration
+const epsilonDecay = 0.99995;  // Very slow decay
+const minEpsilon = 0.35;  // Higher minimum to maintain exploration
+const alpha = 0.1;  // Higher learning rate
+const gamma = 0.999;  // Near-perfect future reward consideration
+const maxMemory = 500000;  // Much larger memory
+const batchSize = 512;  // Much larger batch size
 
 // Initialize experience memory array
 let experienceMemory = [];
@@ -50,25 +50,43 @@ export const initializeQTable = () => {
 
 export const loadQTable = async () => {
     try {
-        const db = getFirestore();
         if (!auth.currentUser) {
-            console.log('No user logged in, initializing new Q-table');
-            initializeQTable();
+            console.log('No authenticated user, using local storage');
+            const localQTable = localStorage.getItem('q_table');
+            if (localQTable) {
+                QTable = JSON.parse(localQTable);
+                console.log('Loaded Q-table from local storage');
+            } else {
+                initializeQTable();
+            }
             return;
         }
 
+        const db = getFirestore();
         const docRef = doc(db, 'users', auth.currentUser.uid, 'training', 'q_table');
-        const docSnap = await getDoc(docRef);
         
-        if (docSnap.exists()) {
-            QTable = { ...docSnap.data().QTable };
-            console.log('Q-table loaded successfully!');
-        } else {
-            console.log('No Q-table found, initializing new one');
-            initializeQTable();
+        try {
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                QTable = { ...docSnap.data().QTable };
+                console.log('Q-table loaded from Firestore');
+            } else {
+                console.log('No Q-table in Firestore, initializing new one');
+                initializeQTable();
+            }
+        } catch (firestoreError) {
+            console.error('Firestore error:', firestoreError);
+            // Try loading from localStorage as fallback
+            const localQTable = localStorage.getItem('q_table');
+            if (localQTable) {
+                QTable = JSON.parse(localQTable);
+                console.log('Loaded Q-table from local storage fallback');
+            } else {
+                initializeQTable();
+            }
         }
     } catch (error) {
-        console.error('Error loading Q-table:', error);
+        console.error('Error in loadQTable:', error);
         initializeQTable();
     }
 };
@@ -123,27 +141,26 @@ export const updateQValue = (state, action, reward, nextState) => {
 export const chooseAction = (state) => {
     initializeQ(state, ['hit', 'stand', 'doubleDown', 'split']);
 
-    // Enhanced action filtering
     const playerTotal = parseInt(state.split('-')[0]);
     const dealerCard = parseInt(state.split('-')[1]) || 10;
     const actions = Object.keys(QTable[state]);
 
-    // Smarter action filtering based on basic strategy
+    // Enhanced action filtering with basic strategy
     const validActions = actions.filter(action => {
         if (playerTotal >= 21 && action === 'hit') return false;
         if (playerTotal <= 8 && action === 'stand') return false;
-        if (playerTotal >= 17 && action === 'hit') return false;
+        if (playerTotal >= 17 && playerTotal <= 21 && action === 'hit') return false;
+        if (playerTotal <= 11 && playerTotal >= 9 && dealerCard <= 6 && action !== 'doubleDown') return false;
         if (action === 'split' && !state.includes('-1-')) return false;
-        if (action === 'doubleDown' && playerTotal < 9) return false;
-        if (action === 'doubleDown' && playerTotal > 11) return false;
+        if (action === 'doubleDown' && (playerTotal < 9 || playerTotal > 11)) return false;
         return true;
     });
 
+    // Weighted exploration-exploitation
     if (Math.random() < epsilon) {
-        // Weighted random exploration
         const weights = validActions.map(action => {
             const qValue = QTable[state][action];
-            return Math.exp(qValue); // Use exponential to favor better actions
+            return Math.exp(qValue * 2); // Increased weight factor
         });
         const totalWeight = weights.reduce((a, b) => a + b, 0);
         const random = Math.random() * totalWeight;
@@ -154,7 +171,6 @@ export const chooseAction = (state) => {
         }
         return validActions[0];
     } else {
-        // Exploit best action
         return validActions.reduce((best, action) => 
             QTable[state][action] > QTable[state][best] ? action : best
         , validActions[0]);
