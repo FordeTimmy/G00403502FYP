@@ -1,48 +1,72 @@
 // src/utils/qLearning.js
 
-// The Q-table: stores states and actions with their corresponding Q-values
 const QTable = {};
+let epsilon = 0.9;
+const epsilonDecay = 0.995;
+const minEpsilon = 0.1;
+const alpha = 0.05;  // Learning rate
+const gamma = 0.95;  // Discount factor
+const maxMemory = 10000;
+let replayMemory = [];
 
-// Initialize Q-values for a given state and possible actions
 export const initializeQ = (state, actions) => {
     if (!QTable[state]) {
         QTable[state] = {};
         for (let action of actions) {
-            QTable[state][action] = 0; // Initialize with zero reward
+            QTable[state][action] = 0;
         }
     }
 };
 
-// Q-learning update rule: updates the Q-value based on rewards and future state
-const alpha = 0.1; // Learning rate
-const gamma = 0.9; // Discount factor
-
-const epsilon = 0.1;  // 10% chance to explore random actions
-
-export const updateQValue = (state, action, reward, nextState) => {
-    initializeQ(state, ['hit', 'stand', 'doubleDown', 'split']);  // Initialize current state
-    initializeQ(nextState, ['hit', 'stand', 'doubleDown', 'split']);  // Initialize next state
-
-    const maxQNextState = Math.max(...Object.values(QTable[nextState]));
-    const oldQValue = QTable[state][action];
-
-    // Update the Q-value using the Bellman equation
-    QTable[state][action] = oldQValue + alpha * (reward + gamma * maxQNextState - oldQValue);
-};
-
-export const chooseAction = (state) => {
-    initializeQ(state, ['hit', 'stand', 'doubleDown', 'split']);  // Ensure state is initialized
-
-    if (Math.random() < epsilon) {
-        // Explore: Choose a random action
-        const actions = ['hit', 'stand', 'doubleDown', 'split'];
-        return actions[Math.floor(Math.random() * actions.length)];
-    } else {
-        // Exploit: Choose action with the highest Q-value
-        return Object.keys(QTable[state]).reduce((bestAction, action) => 
-            QTable[state][action] > QTable[state][bestAction] ? action : bestAction
-        );
+const addToReplayMemory = (experience) => {
+    replayMemory.push(experience);
+    if (replayMemory.length > maxMemory) {
+        replayMemory.shift();
     }
 };
 
-export const getQTable = () => QTable;  // For debugging, we can print the table to see values
+const sampleReplayMemory = (batchSize = 32) => {
+    if (replayMemory.length < batchSize) return replayMemory;
+    const samples = [];
+    for (let i = 0; i < batchSize; i++) {
+        const index = Math.floor(Math.random() * replayMemory.length);
+        samples.push(replayMemory[index]);
+    }
+    return samples;
+};
+
+export const updateQValue = (state, action, reward, nextState) => {
+    initializeQ(state, ['hit', 'stand', 'doubleDown', 'split']);
+    initializeQ(nextState, ['hit', 'stand', 'doubleDown', 'split']);
+
+    // Add experience to replay memory
+    addToReplayMemory({ state, action, reward, nextState });
+
+    // Update Q-value using replay memory
+    const samples = sampleReplayMemory();
+    samples.forEach(exp => {
+        const maxQNextState = Math.max(...Object.values(QTable[exp.nextState]));
+        const oldQValue = QTable[exp.state][exp.action];
+        QTable[exp.state][exp.action] = oldQValue + alpha * (exp.reward + gamma * maxQNextState - oldQValue);
+    });
+
+    // Decay epsilon
+    epsilon = Math.max(minEpsilon, epsilon * epsilonDecay);
+};
+
+export const chooseAction = (state) => {
+    initializeQ(state, ['hit', 'stand', 'doubleDown', 'split']);
+
+    if (Math.random() < epsilon) {
+        // Explore: Choose random action
+        const actions = Object.keys(QTable[state]);
+        return actions[Math.floor(Math.random() * actions.length)];
+    } else {
+        // Exploit: Choose best action
+        return Object.entries(QTable[state]).reduce((best, [action, value]) => 
+            value > QTable[state][best] ? action : best
+        , Object.keys(QTable[state])[0]);
+    }
+};
+
+export const getQTable = () => QTable;

@@ -1,4 +1,5 @@
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { auth } from '../firebaseConfig';
 import { chooseAction, updateQValue, getQTable } from './qLearning';
 
 // Helper functions
@@ -26,6 +27,7 @@ const createDeck = () => {
     const suits = ['♠', '♥', '♣', '♦'];
     const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
     const deck = [];
+    
     for (let suit of suits) {
         for (let value of values) {
             deck.push({ suit, value });
@@ -37,15 +39,47 @@ const createDeck = () => {
 const saveQTableToFirebase = async () => {
     const db = getFirestore();
     try {
-        await setDoc(doc(db, 'ai_training', 'q_table'), { QTable: getQTable() });
-        console.log('Q-table saved to Firebase!');
+        // Save to a user-specific path instead
+        if (auth.currentUser) {
+            await setDoc(doc(db, 'users', auth.currentUser.uid, 'ai_training', 'q_table'), {
+                QTable: getQTable(),
+                lastUpdated: new Date().toISOString()
+            });
+            console.log('Q-table saved successfully!');
+        } else {
+            console.log('User not authenticated, storing Q-table locally only');
+            localStorage.setItem('q_table', JSON.stringify(getQTable()));
+        }
     } catch (error) {
         console.error('Error saving Q-table:', error);
+        // Fallback to local storage
+        localStorage.setItem('q_table', JSON.stringify(getQTable()));
     }
 };
 
-export const simulateGames = async (numGames = 10000) => {
-    console.log(`Training AI with ${numGames} simulated games...`);
+const calculateReward = (playerTotal, dealerTotal, numCards) => {
+    if (playerTotal > 21) {
+        return -15; // Bust penalty
+    }
+    if (playerTotal === 21 && numCards === 2) {
+        return 20; // Blackjack bonus
+    }
+    if (playerTotal === 21) {
+        return 15; // Perfect hand
+    }
+    if (playerTotal === 20) {
+        return 10; // Near perfect
+    }
+    if (dealerTotal > 21) {
+        return 10 + (21 - playerTotal); // Dealer bust bonus
+    }
+    if (playerTotal > dealerTotal) {
+        return 10 + (playerTotal - dealerTotal); // Winning margin bonus
+    }
+    return -10; // Loss
+};
+
+const runSimulation = async (numGames) => {
     let winCount = 0;
     let lossCount = 0;
 
@@ -62,10 +96,13 @@ export const simulateGames = async (numGames = 10000) => {
             switch (action) {
                 case 'hit':
                     playerHand.push(deck.pop());
-                    if (calculateHandValue(playerHand) > 21) {
-                        reward = -10;
+                    const playerTotal = calculateHandValue(playerHand);
+                    if (playerTotal > 21) {
+                        reward = calculateReward(playerTotal, 0, playerHand.length);
                         gameOver = true;
                         lossCount++;
+                    } else if (playerTotal >= 17) {
+                        reward = 5; // Reward for safe hit
                     }
                     break;
 
@@ -73,19 +110,11 @@ export const simulateGames = async (numGames = 10000) => {
                     while (calculateHandValue(dealerHand) < 17) {
                         dealerHand.push(deck.pop());
                     }
-                    const playerTotal = calculateHandValue(playerHand);
                     const dealerTotal = calculateHandValue(dealerHand);
-                    
-                    if (dealerTotal > 21 || playerTotal > dealerTotal) {
-                        reward = 10;
-                        winCount++;
-                    } else if (playerTotal === dealerTotal) {
-                        reward = 0;
-                    } else {
-                        reward = -10;
-                        lossCount++;
-                    }
+                    reward = calculateReward(playerTotal, dealerTotal, playerHand.length);
                     gameOver = true;
+                    if (reward > 0) winCount++;
+                    else if (reward < 0) lossCount++;
                     break;
 
                 default:
@@ -98,13 +127,30 @@ export const simulateGames = async (numGames = 10000) => {
             updateQValue(state, action, reward, nextState);
             state = nextState;
         }
-
-        if (i % 1000 === 0) {
-            console.log(`Simulated ${i} games, Win rate: ${((winCount/(i+1))*100).toFixed(2)}%`);
-        }
     }
 
-    console.log(`Training complete! Final win rate: ${((winCount/numGames)*100).toFixed(2)}%`);
-    await saveQTableToFirebase();
     return { winCount, lossCount };
+};
+
+export const simulateGames = async (numGames = 1000, iterations = 10) => {
+    console.log(`Starting AI training: ${numGames} games × ${iterations} iterations = ${numGames * iterations} total games`);
+    let totalWins = 0;
+    let totalLosses = 0;
+
+    for (let i = 0; i < iterations; i++) {
+        console.log(`Starting iteration ${i + 1} of ${iterations}`);
+        const { winCount, lossCount } = await runSimulation(numGames);
+        totalWins += winCount;
+        totalLosses += lossCount;
+        
+        const iterationWinRate = (winCount / numGames) * 100;
+        console.log(`Iteration ${i + 1} complete - Win rate: ${iterationWinRate.toFixed(2)}%`);
+        
+        // Save progress every iteration
+        await saveQTableToFirebase();
+    }
+
+    const finalWinRate = (totalWins / (numGames * iterations)) * 100;
+    console.log(`Training complete! Overall win rate: ${finalWinRate.toFixed(2)}%`);
+    return { totalWins, totalLosses };
 };
