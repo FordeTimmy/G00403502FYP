@@ -1,15 +1,15 @@
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 
-// Accelerated learning parameters
+// Further optimized learning parameters for higher win rate
 let QTable = {};
-let epsilon = 0.95;  // Still high exploration but slightly reduced
-const epsilonDecay = 0.995;  // Faster decay
-const minEpsilon = 0.1;  // Lower minimum for more exploitation
-const alpha = 0.05;  // Higher learning rate for faster updates
-const gamma = 0.95;  // Slightly reduced to focus more on immediate rewards
-const maxMemory = 50000;  // Reduced memory size for faster processing
-const batchSize = 32;  // Smaller batch size for faster updates
+let epsilon = 0.99;  // Even higher initial exploration
+const epsilonDecay = 0.9999;  // Much slower decay for better learning
+const minEpsilon = 0.3;  // Higher minimum to keep exploring good options
+const alpha = 0.08;  // Higher learning rate for faster adaptation
+const gamma = 0.99;  // Maximum emphasis on future rewards
+const maxMemory = 300000;  // Much larger memory for better pattern recognition
+const batchSize = 256;  // Larger batch size for better learning
 
 // Initialize experience memory array
 let experienceMemory = [];
@@ -123,24 +123,38 @@ export const updateQValue = (state, action, reward, nextState) => {
 export const chooseAction = (state) => {
     initializeQ(state, ['hit', 'stand', 'doubleDown', 'split']);
 
-    // Smart action filtering based on state
+    // Enhanced action filtering
     const playerTotal = parseInt(state.split('-')[0]);
-    const dealerCard = parseInt(state.split('-')[1]) || 10; // Convert face cards to 10
+    const dealerCard = parseInt(state.split('-')[1]) || 10;
     const actions = Object.keys(QTable[state]);
 
-    // Filter out obviously bad actions
+    // Smarter action filtering based on basic strategy
     const validActions = actions.filter(action => {
         if (playerTotal >= 21 && action === 'hit') return false;
-        if (playerTotal <= 11 && action === 'stand') return false;
+        if (playerTotal <= 8 && action === 'stand') return false;
+        if (playerTotal >= 17 && action === 'hit') return false;
         if (action === 'split' && !state.includes('-1-')) return false;
+        if (action === 'doubleDown' && playerTotal < 9) return false;
+        if (action === 'doubleDown' && playerTotal > 11) return false;
         return true;
     });
 
     if (Math.random() < epsilon) {
-        // Smart exploration
-        return validActions[Math.floor(Math.random() * validActions.length)];
+        // Weighted random exploration
+        const weights = validActions.map(action => {
+            const qValue = QTable[state][action];
+            return Math.exp(qValue); // Use exponential to favor better actions
+        });
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+        const random = Math.random() * totalWeight;
+        let sum = 0;
+        for (let i = 0; i < validActions.length; i++) {
+            sum += weights[i];
+            if (random <= sum) return validActions[i];
+        }
+        return validActions[0];
     } else {
-        // Exploit best action from valid ones
+        // Exploit best action
         return validActions.reduce((best, action) => 
             QTable[state][action] > QTable[state][best] ? action : best
         , validActions[0]);
