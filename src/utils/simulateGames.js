@@ -60,37 +60,39 @@ const saveQTableToFirebase = async () => {
 const calculateReward = (playerTotal, dealerTotal, numCards, betAmount) => {
     let reward = 0;
 
-    // Perfect hands
+    // Enhanced reward structure
     if (playerTotal === 21 && numCards === 2) {
-        reward = 30; // Natural blackjack bonus
+        reward = 50; // Increased blackjack bonus
     } else if (playerTotal === 21) {
-        reward = 20; // Perfect hand
+        reward = 30; // Higher perfect hand reward
     } else if (playerTotal === 20) {
-        reward = 15; // Near perfect hand
+        reward = 20; // Better near-perfect reward
+    } else if (playerTotal === 19) {
+        reward = 15; // New reward for strong hand
     }
     
-    // Winning conditions
+    // Winning conditions with enhanced rewards
     else if (dealerTotal > 21) {
-        reward = 10 + Math.min(5, (21 - playerTotal)); // Dealer bust with bonus for better hands
+        reward = 15 + Math.min(10, (21 - playerTotal)); // Better dealer bust bonus
     } else if (playerTotal > dealerTotal && playerTotal < 21) {
-        reward = 10 + (playerTotal - dealerTotal); // Better winning margin = higher reward
+        reward = 15 + (playerTotal - dealerTotal) * 2; // Doubled winning margin bonus
     }
     
-    // Losing conditions
+    // Enhanced penalties
     else if (playerTotal > 21) {
-        reward = -15 - Math.min(5, (playerTotal - 21)); // Bigger bust = bigger penalty
+        reward = -20 - Math.min(10, (playerTotal - 21)); // Harsher bust penalty
     } else if (playerTotal < dealerTotal) {
-        reward = -10 - (dealerTotal - playerTotal); // Bigger loss = bigger penalty
+        reward = -15 - (dealerTotal - playerTotal) * 2; // Doubled loss penalty
     }
 
     // Betting strategy rewards
     if (betAmount >= 50) {
-        reward *= 1.2; // 20% bonus for aggressive betting
+        reward *= 1.3; // 30% bonus for aggressive betting
     }
 
     // Safe play rewards
     if (playerTotal >= 17 && playerTotal <= 21) {
-        reward += 5; // Bonus for achieving safe hand
+        reward += 8; // Increased bonus for achieving safe hand
     }
 
     return reward;

@@ -1,15 +1,14 @@
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 
-// Change from const to let for the QTable
+// Optimized learning parameters
 let QTable = {};
-// Adjust hyperparameters for better learning
-let epsilon = 0.7;  // Start with moderate exploration
-const epsilonDecay = 0.998;  // Faster decay
-const minEpsilon = 0.1;  // Minimum exploration rate
-const alpha = 0.01;  // Slower, more stable learning
-const gamma = 0.99;  // Focus on long-term rewards
-const maxMemory = 20000;
+let epsilon = 0.9;  // Start with high exploration
+const epsilonDecay = 0.997;  // Slower decay for better exploration
+const minEpsilon = 0.15;  // Higher minimum exploration rate
+const alpha = 0.03;  // Slightly higher learning rate for faster adaptation
+const gamma = 0.99;  // Maximum future reward consideration
+const maxMemory = 50000;  // Increased memory size for better learning
 let experienceMemory = [];
 
 export const initializeQ = (state, actions) => {
