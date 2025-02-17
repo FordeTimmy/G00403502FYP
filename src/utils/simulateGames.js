@@ -62,37 +62,34 @@ const calculateReward = (playerTotal, dealerTotal, numCards, betAmount) => {
 
     // Enhanced reward structure
     if (playerTotal === 21 && numCards === 2) {
-        reward = 50; // Increased blackjack bonus
+        reward = 60;  // Higher blackjack bonus
     } else if (playerTotal === 21) {
-        reward = 30; // Higher perfect hand reward
+        reward = 40;  // Higher perfect hand reward
     } else if (playerTotal === 20) {
-        reward = 20; // Better near-perfect reward
+        reward = 25;  // Better near-perfect reward
     } else if (playerTotal === 19) {
-        reward = 15; // New reward for strong hand
+        reward = 20;  // Better strong hand reward
+    } else if (playerTotal === 18) {
+        reward = 15;  // New reward tier
     }
     
-    // Winning conditions with enhanced rewards
+    // Enhanced winning conditions
     else if (dealerTotal > 21) {
-        reward = 15 + Math.min(10, (21 - playerTotal)); // Better dealer bust bonus
+        reward = 20 + Math.min(15, (21 - playerTotal)); // Better dealer bust bonus
     } else if (playerTotal > dealerTotal && playerTotal < 21) {
-        reward = 15 + (playerTotal - dealerTotal) * 2; // Doubled winning margin bonus
+        reward = 20 + (playerTotal - dealerTotal) * 3; // Triple winning margin bonus
     }
     
-    // Enhanced penalties
+    // Adjusted penalties
     else if (playerTotal > 21) {
-        reward = -20 - Math.min(10, (playerTotal - 21)); // Harsher bust penalty
+        reward = -25 - Math.min(15, (playerTotal - 21)); // Harsher bust penalty
     } else if (playerTotal < dealerTotal) {
-        reward = -15 - (dealerTotal - playerTotal) * 2; // Doubled loss penalty
+        reward = -20 - (dealerTotal - playerTotal) * 2; // Doubled loss penalty
     }
 
-    // Betting strategy rewards
-    if (betAmount >= 50) {
-        reward *= 1.3; // 30% bonus for aggressive betting
-    }
-
-    // Safe play rewards
+    // Strategic play rewards
     if (playerTotal >= 17 && playerTotal <= 21) {
-        reward += 8; // Increased bonus for achieving safe hand
+        reward += 10; // Higher bonus for safe play
     }
 
     return reward;
@@ -158,7 +155,7 @@ const runSimulation = async (numGames) => {
     return { winCount, lossCount };
 };
 
-export const simulateGames = async (numGames = 2000, iterations = 20) => {
+export const simulateGames = async (numGames = 2000, iterations = 25) => {
     console.log('Loading previous Q-table...');
     await loadQTable();
 

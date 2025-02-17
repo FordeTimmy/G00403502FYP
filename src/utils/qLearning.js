@@ -1,16 +1,20 @@
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 
-// Finely tuned learning parameters
+// Further optimized learning parameters
 let QTable = {};
-let epsilon = 0.95;  // Higher initial exploration
-const epsilonDecay = 0.9995;  // Very slow decay for thorough exploration
-const minEpsilon = 0.2;  // Higher minimum to maintain some exploration
-const alpha = 0.02;  // Slower learning rate for stability
-const gamma = 0.95;  // Slightly reduced future reward weight
-const maxMemory = 100000;  // Much larger memory for better learning
-const batchSize = 64;  // Larger batch size for better learning
+let epsilon = 0.98;  // Even higher initial exploration
+const epsilonDecay = 0.9998;  // Much slower decay
+const minEpsilon = 0.25;  // Higher minimum for continued exploration
+const alpha = 0.015;  // More refined learning rate
+const gamma = 0.98;  // Higher future reward consideration
+const maxMemory = 200000;  // Double memory size
+const batchSize = 128;  // Larger batch size for better learning
 
+// Initialize experience memory array
+let experienceMemory = [];
+
+// Initialize state for Q-learning
 export const initializeQ = (state, actions) => {
     if (!QTable[state]) {
         QTable[state] = {};
@@ -37,9 +41,11 @@ const sampleFromMemory = (batchSize = 64) => {
     return samples;
 };
 
+// Reset functions
 export const initializeQTable = () => {
-    QTable = {}; // Reset Q-table
-    console.log('Q-table initialized');
+    QTable = {};
+    experienceMemory = []; // Reset experience memory too
+    console.log('Q-table and experience memory initialized');
 };
 
 export const loadQTable = async () => {
@@ -117,16 +123,30 @@ export const updateQValue = (state, action, reward, nextState) => {
 export const chooseAction = (state) => {
     initializeQ(state, ['hit', 'stand', 'doubleDown', 'split']);
 
+    // Smart action filtering based on state
+    const playerTotal = parseInt(state.split('-')[0]);
+    const dealerCard = parseInt(state.split('-')[1]) || 10; // Convert face cards to 10
+    const actions = Object.keys(QTable[state]);
+
+    // Filter out obviously bad actions
+    const validActions = actions.filter(action => {
+        if (playerTotal >= 21 && action === 'hit') return false;
+        if (playerTotal <= 11 && action === 'stand') return false;
+        if (action === 'split' && !state.includes('-1-')) return false;
+        return true;
+    });
+
     if (Math.random() < epsilon) {
-        // Explore: Choose random action
-        const actions = Object.keys(QTable[state]);
-        return actions[Math.floor(Math.random() * actions.length)];
+        // Smart exploration
+        return validActions[Math.floor(Math.random() * validActions.length)];
     } else {
-        // Exploit: Choose best action
-        return Object.entries(QTable[state]).reduce((best, [action, value]) => 
-            value > QTable[state][best] ? action : best
-        , Object.keys(QTable[state])[0]);
+        // Exploit best action from valid ones
+        return validActions.reduce((best, action) => 
+            QTable[state][action] > QTable[state][best] ? action : best
+        , validActions[0]);
     }
 };
 
 export const getQTable = () => QTable;
+
+export const getExperienceMemorySize = () => experienceMemory.length;
