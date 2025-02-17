@@ -93,10 +93,12 @@ const runSimulation = async (numGames) => {
 
         while (!gameOver) {
             const action = chooseAction(state);
+            let playerTotal = calculateHandValue(playerHand); // Declare playerTotal here
+
             switch (action) {
                 case 'hit':
                     playerHand.push(deck.pop());
-                    const playerTotal = calculateHandValue(playerHand);
+                    playerTotal = calculateHandValue(playerHand); // Update playerTotal
                     if (playerTotal > 21) {
                         reward = calculateReward(playerTotal, 0, playerHand.length);
                         gameOver = true;
