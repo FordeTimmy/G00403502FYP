@@ -465,3 +465,35 @@ body {
     transform: translateY(-2px);
 }
 
+.ai-toggle {
+    position: fixed;
+    top: 120px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.ai-toggle-button {
+    background: #333;
+    color: white;
+    padding: 10px 20px;
+    border: 2px solid gold;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.ai-enabled {
+    background: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.ai-disabled {
+    background: #666;
+    opacity: 0.8;
+}
+
+.ai-toggle-button:hover {
+    transform: translateY(-2px);
+}
+

@@ -91,6 +91,7 @@ const Game = () => {
     const navigate = useNavigate();  // Add this hook
     const [renderTrigger, setRenderTrigger] = useState(false);
     const [showTutorial, setShowTutorial] = useState(true); // Add new state for tutorial
+    const [isAIEnabled, setIsAIEnabled] = useState(true); // Add new state for AI toggle
     
     // Add debug logging for chip images
     useEffect(() => {
@@ -589,6 +590,16 @@ const endRound = (status) => {
                 </div>
             </div>
 
+            {/* AI Toggle Button - Add near the top of the game */}
+            <div className="ai-toggle">
+                <button 
+                    onClick={() => setIsAIEnabled(!isAIEnabled)}
+                    className={`ai-toggle-button ${isAIEnabled ? 'ai-enabled' : 'ai-disabled'}`}
+                >
+                    AI Assistant: {isAIEnabled ? 'ON' : 'OFF'}
+                </button>
+            </div>
+
             {/* Tutorial Popup */}
             {showTutorial && !activeBet && (
                 <div className="tutorial-popup">
@@ -619,8 +630,8 @@ const endRound = (status) => {
                 ))}
             </div>
 
-            {/* Add AI suggestion before the dealer's hand */}
-            {gameStatus === 'Playing...' && (
+            {/* Modify AI suggestion to only show when enabled */}
+            {isAIEnabled && gameStatus === 'Playing...' && (
                 <div className="ai-suggestion">
                     <p>AI Suggestion: {getAIRecommendation()}</p>
                 </div>
