@@ -548,22 +548,7 @@ const endRound = (status) => {
         return recommendation;
     };
 
-    // Add useEffect to run initial AI training
-    useEffect(() => {
-        const initializeAI = async () => {
-            console.log('Starting AI training with 10,000 games...');
-            try {
-                await simulateGames(10000);
-                console.log('AI training complete!');
-            } catch (error) {
-                console.error('AI training error:', error);
-            }
-        };
-
-        initializeAI();
-    }, []);
-
-    // Add a function to manually trigger training
+    // Keep the manual training function
     const handleRetrainAI = async () => {
         if (window.confirm('This will train the AI with 10,000 games. Continue?')) {
             setGameStatus('Training AI...');
