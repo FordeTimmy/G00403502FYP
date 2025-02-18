@@ -271,6 +271,7 @@ const Game = () => {
             setCurrency(currency - amount); // Deduct the bet from the player's currency
             setCanBet(false); // Disable further betting once the game starts
             setActiveBet(amount); // Store the bet amount to show correct chip
+            setShowTutorial(false); // Dismiss tutorial when bet is placed
             startGame(amount);
         } else {
             alert("Betting is only allowed at the start of the game, and you need sufficient funds.");
@@ -589,12 +590,11 @@ const endRound = (status) => {
             </div>
 
             {/* Tutorial Popup */}
-            {showTutorial && (
+            {showTutorial && !activeBet && (
                 <div className="tutorial-popup">
                     <div className="tutorial-content">
                         <h3>Welcome to Blackjack!</h3>
                         <p>👉 Click on a chip to place your bet and start the game</p>
-                        <button onClick={() => setShowTutorial(false)}>Got it!</button>
                     </div>
                 </div>
             )}
