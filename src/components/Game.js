@@ -614,37 +614,40 @@ const endRound = (status) => {
                 </div>
             )}
 
-            {/* Dealer's hand */}
+            {/* Updated Dealer's hand */}
             <div className="dealer-hand">
-                <h3 className="text-white">Dealer's Hand ({calculateHandValue(dealerHand)})</h3>
+                <h3 className="text-white">
+                    Dealer's Hand ({gameStatus === 'Playing...' ? getCardValue(dealerHand[0]) : calculateHandValue(dealerHand)})
+                </h3>
                 <div className="flex gap-2">
                     {dealerHand.map((card, index) => (
-                        <img 
-                            key={index}
-                            src={getCardImage(card)}
-                            alt={`${card.value}${card.suit}`}
-                            className="card"
-                        />
+                        index === 0 ? (
+                            <img 
+                                key={index}
+                                src={getCardImage(card)}
+                                alt={`${card.value}${card.suit}`}
+                                className="card"
+                            />
+                        ) : (
+                            gameStatus === 'Playing...' ? (
+                                <img 
+                                    key={index}
+                                    src="./images/cards/cardback.png"
+                                    alt="Hidden card"
+                                    className="card"
+                                />
+                            ) : (
+                                <img 
+                                    key={index}
+                                    src={getCardImage(card)}
+                                    alt={`${card.value}${card.suit}`}
+                                    className="card"
+                                />
+                            )
+                        )
                     ))}
                 </div>
             </div>
-
-            {/* Updated betting display */}
-            {activeBet && (
-                <>
-                    <div className="bet-amount">Current Bet: ${activeBet}</div>
-                    <div className="pot-container">
-                        <div className="pot-chip-container">
-                            <img 
-                                src={getChipImage(activeBet.toString())}
-                                alt="Pot Chip"
-                                className="pot-chip"
-                            />
-                            <span className="pot-chip-label">{activeBet}</span>
-                        </div>
-                    </div>
-                </>
-            )}
 
             {/* Player's hand(s) */}
             {isSplit ? (
@@ -690,6 +693,23 @@ const endRound = (status) => {
                         ))}
                     </div>
                 </div>
+            )}
+
+            {/* Updated betting display */}
+            {activeBet && (
+                <>
+                    <div className="bet-amount">Current Bet: ${activeBet}</div>
+                    <div className="pot-container">
+                        <div className="pot-chip-container">
+                            <img 
+                                src={getChipImage(activeBet.toString())}
+                                alt="Pot Chip"
+                                className="pot-chip"
+                            />
+                            <span className="pot-chip-label">{activeBet}</span>
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* Game controls - remove start game button */}
