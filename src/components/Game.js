@@ -90,6 +90,7 @@ const updateUserStats = async (gameResult, betAmount = 0) => {
 const Game = () => {
     const navigate = useNavigate();  // Add this hook
     const [renderTrigger, setRenderTrigger] = useState(false);
+    const [showTutorial, setShowTutorial] = useState(true); // Add new state for tutorial
     
     // Add debug logging for chip images
     useEffect(() => {
@@ -586,6 +587,17 @@ const endRound = (status) => {
                     Balance: ${currency.toLocaleString()}
                 </div>
             </div>
+
+            {/* Tutorial Popup */}
+            {showTutorial && (
+                <div className="tutorial-popup">
+                    <div className="tutorial-content">
+                        <h3>Welcome to Blackjack!</h3>
+                        <p>👉 Click on a chip to place your bet and start the game</p>
+                        <button onClick={() => setShowTutorial(false)}>Got it!</button>
+                    </div>
+                </div>
+            )}
 
             {/* Move chips to vertical layout */}
             <div className="betting-chips">
