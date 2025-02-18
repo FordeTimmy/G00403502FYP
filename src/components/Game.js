@@ -4,6 +4,7 @@ import { auth } from '../firebaseConfig';
 import './Game.css';
 import { initializeQ, updateQValue, getQTable, chooseAction } from '../utils/qLearning';
 import { simulateGames } from '../utils/simulateGames';
+import { useNavigate } from 'react-router-dom';  // Add this import at the top
 
 
 
@@ -87,6 +88,7 @@ const updateUserStats = async (gameResult, betAmount = 0) => {
 };
 
 const Game = () => {
+    const navigate = useNavigate();  // Add this hook
     const [renderTrigger, setRenderTrigger] = useState(false);
     
     // Add debug logging for chip images
@@ -563,11 +565,23 @@ const endRound = (status) => {
         }
     };
 
+    // Add this function to handle navigation
+    const handleHomeClick = () => {
+        if (window.confirm('Are you sure you want to return to the home page? Current game progress will be lost.')) {
+            navigate('/');
+        }
+    };
+
     return (
         <div className="casino-table">
-            {/* Updated game header */}
             <div className="game-header">
-                <h1 className="game-title">Casino Blackjack</h1>
+                {/* Add home button next to title */}
+                <div className="header-content">
+                    <h1 className="game-title">Casino Blackjack</h1>
+                    <button onClick={handleHomeClick} className="home-button">
+                        Home
+                    </button>
+                </div>
                 <div className="currency-display">
                     Balance: ${currency.toLocaleString()}
                 </div>
