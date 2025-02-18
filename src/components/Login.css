@@ -55,44 +55,46 @@
     box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
-.login-button, .back-button, .register-button {
+.login-container .login-button,
+.login-container .back-button,
+.login-container .register-button {
     width: 100%;
     padding: 1rem;
     margin: 0.5rem 0;
     border: none;
     border-radius: 8px;
-    font-size: 1.1rem;
+    font-size: 1.5rem;
     font-weight: bold;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
 }
 
-.login-button {
+.login-container .login-button {
     background: #FFD700;
     color: black;
 }
 
-.login-button:hover {
+.login-container .login-button:hover {
     background: #DAA520;
     transform: translateY(-2px);
 }
 
-.back-button {
+.login-container .back-button {
     background: #4CAF50;
     color: white;
 }
 
-.back-button:hover {
+.login-container .back-button:hover {
     background: #45a049;
     transform: translateY(-2px);
 }
 
-.register-button {
+.login-container .register-button {
     background: #4A90E2;
     color: white;
 }
 
-.register-button:hover {
+.login-container .register-button:hover {
     background: #357ABD;
     transform: translateY(-2px);
 }

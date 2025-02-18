@@ -23,54 +23,38 @@
     align-items: center;
 }
 
-.start-button {
-    background: #FFD700;
+/* Unified button styles */
+.start-button,
+.login-button,
+.settings-button,
+.rules-button {
+    background: #FFD700;  /* Yellow background for all buttons */
     color: black;
-    font-size: 1.5rem;
+    font-size: 24px;  /* Increased consistent font size for all buttons */
     padding: 15px 40px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
-    font-weight: bold;
+    font-weight: 700;  /* Increased font weight for all buttons */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 250px;  /* Fixed width for all buttons */
+    text-align: center;
+    font-family: 'Arial', sans-serif;  /* Added consistent font family */
+    letter-spacing: 0.5px;  /* Added for better text readability */
+    -webkit-font-smoothing: antialiased;  /* Added for better font rendering */
 }
 
-.start-button:hover {
-    background: #DAA520;
+.start-button:hover,
+.login-button:hover,
+.settings-button:hover,
+.rules-button:hover {
+    background: #DAA520;  /* Darker yellow on hover */
     transform: translateY(-2px);
 }
 
-.login-button {
-    background: #4CAF50;
-    color: white;
-    font-size: 1.5rem;
-    padding: 15px 40px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.login-button:hover {
-    background: #45a049;
-    transform: translateY(-2px);
-}
-
-.settings-button {
-    background: #4A90E2;
-    color: white;
-    font-size: 1.5rem;
-    padding: 15px 40px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
+/* Remove individual button styles */
+/* Delete or comment out the individual .start-button, .login-button, .settings-button, .rules-button styles */
 
 .settings-modal {
     position: fixed;
@@ -120,24 +104,6 @@
 
 .dark-mode h1 {
     color: #ffd700;
-}
-
-.rules-button {
-    background: #FF6B6B;
-    color: white;
-    font-size: 1.5rem;
-    padding: 15px 40px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.rules-button:hover {
-    background: #FF5252;
-    transform: translateY(-2px);
 }
 
 .rules-modal {
