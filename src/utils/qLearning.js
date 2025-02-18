@@ -1,15 +1,15 @@
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 
-// Optimized parameters for higher win rate
+// Optimized parameters for stable higher win rate
 let QTable = {};
-let epsilon = 0.999;  // Near-perfect initial exploration
-const epsilonDecay = 0.99995;  // Very slow decay
-const minEpsilon = 0.35;  // Higher minimum to maintain exploration
-const alpha = 0.1;  // Higher learning rate
-const gamma = 0.999;  // Near-perfect future reward consideration
-const maxMemory = 500000;  // Much larger memory
-const batchSize = 512;  // Much larger batch size
+let epsilon = 0.95;  // Slightly lower initial exploration
+const epsilonDecay = 0.9997;  // More balanced decay
+const minEpsilon = 0.2;  // Lower minimum for more exploitation
+const alpha = 0.05;  // Moderate learning rate
+const gamma = 0.97;  // Slightly lower future reward weight
+const maxMemory = 150000;  // Balanced memory size
+const batchSize = 128;  // Moderate batch size
 
 // Initialize experience memory array
 let experienceMemory = [];
@@ -145,22 +145,37 @@ export const chooseAction = (state) => {
     const dealerCard = parseInt(state.split('-')[1]) || 10;
     const actions = Object.keys(QTable[state]);
 
-    // Enhanced action filtering with basic strategy
+    // Strict basic strategy filtering
     const validActions = actions.filter(action => {
-        if (playerTotal >= 21 && action === 'hit') return false;
-        if (playerTotal <= 8 && action === 'stand') return false;
-        if (playerTotal >= 17 && playerTotal <= 21 && action === 'hit') return false;
-        if (playerTotal <= 11 && playerTotal >= 9 && dealerCard <= 6 && action !== 'doubleDown') return false;
+        // Always hit on 11 or below
+        if (playerTotal <= 11 && action !== 'hit') return false;
+        
+        // Never hit on 17 or above
+        if (playerTotal >= 17 && action === 'hit') return false;
+        
+        // Consider dealer's upcard for stand decisions
+        if (playerTotal >= 12 && playerTotal <= 16) {
+            if (dealerCard >= 7 && action === 'stand') return false;
+            if (dealerCard <= 6 && action === 'hit') return false;
+        }
+
+        // Double down restrictions
+        if (action === 'doubleDown') {
+            if (playerTotal < 9 || playerTotal > 11) return false;
+            if (dealerCard >= 7) return false;
+        }
+
+        // Split restrictions
         if (action === 'split' && !state.includes('-1-')) return false;
-        if (action === 'doubleDown' && (playerTotal < 9 || playerTotal > 11)) return false;
+
         return true;
     });
 
-    // Weighted exploration-exploitation
+    // More conservative exploration
     if (Math.random() < epsilon) {
         const weights = validActions.map(action => {
             const qValue = QTable[state][action];
-            return Math.exp(qValue * 2); // Increased weight factor
+            return Math.exp(qValue * 1.5); // Reduced weight factor
         });
         const totalWeight = weights.reduce((a, b) => a + b, 0);
         const random = Math.random() * totalWeight;
@@ -170,11 +185,12 @@ export const chooseAction = (state) => {
             if (random <= sum) return validActions[i];
         }
         return validActions[0];
-    } else {
-        return validActions.reduce((best, action) => 
-            QTable[state][action] > QTable[state][best] ? action : best
-        , validActions[0]);
     }
+    
+    // Use best action from valid ones
+    return validActions.reduce((best, action) => 
+        QTable[state][action] > QTable[state][best] ? action : best
+    , validActions[0]);
 };
 
 export const getQTable = () => QTable;

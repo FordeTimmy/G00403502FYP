@@ -155,7 +155,8 @@ const runSimulation = async (numGames) => {
     return { winCount, lossCount };
 };
 
-export const simulateGames = async (numGames = 1000, iterations = 10) => {
+export const simulateGames = async (numGames = 5000, iterations = 15) => {
+    // Reduced games per iteration but increased iterations for better learning
     console.log('Loading previous Q-table...');
     await loadQTable();
 
@@ -168,12 +169,10 @@ export const simulateGames = async (numGames = 1000, iterations = 10) => {
         totalWins += winCount;
         totalGames += numGames;
 
-        // Save progress more frequently
-        if ((i + 1) % 2 === 0) {  // Save every 2 iterations instead of 5
-            await saveQTable();
-            console.log(`Progress saved at iteration ${i + 1}`);
-            console.log(`Current win rate: ${((totalWins/totalGames)*100).toFixed(2)}%`);
-        }
+        // Save progress every iteration for better consistency
+        await saveQTable();
+        console.log(`Progress saved at iteration ${i + 1}`);
+        console.log(`Current win rate: ${((totalWins/totalGames)*100).toFixed(2)}%`);
     }
 
     await saveQTable();
