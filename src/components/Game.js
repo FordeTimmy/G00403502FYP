@@ -692,9 +692,8 @@ const endRound = (status) => {
                 </div>
             )}
 
-            {/* Game controls */}
+            {/* Game controls - remove start game button */}
             <div className="controls">
-                <button onClick={() => startGame(bet)} disabled={bet === 0 || !canBet || isPaused}>Start New Game</button>
                 <button onClick={togglePause}>{isPaused ? 'Resume' : 'Pause'}</button>
                 <button
                     onClick={hit}
