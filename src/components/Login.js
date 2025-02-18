@@ -22,6 +22,10 @@ const Login = () => {
         }
     };
 
+    const handleRegisterClick = () => {
+        navigate('/register');
+    };
+
     return (
         <div className="login-container">
             <div className="login-card">
@@ -52,7 +56,7 @@ const Login = () => {
                     <button onClick={() => navigate('/')} className="back-button">
                         Back to Home
                     </button>
-                    <button onClick={() => navigate('/register')} className="register-button">
+                    <button onClick={handleRegisterClick} className="register-button">
                         Create Account
                     </button>
                 </div>
