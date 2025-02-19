@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getFirestore, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 import './Game.css';
@@ -6,6 +6,7 @@ import { initializeQ, updateQValue, getQTable, chooseAction } from '../utils/qLe
 import { simulateGames } from '../utils/simulateGames';
 import { useNavigate } from 'react-router-dom';  // Add this import at the top
 import defaultProfilePic from '../assets/defaultProfilePic.jpg';
+import backgroundMusic from '../assets/music/backgroundMusic.mp3';
 
 // Add these utility functions at the top
 const LOCAL_STORAGE_KEYS = {
@@ -128,6 +129,7 @@ const Game = () => {
     const [playerProfile, setPlayerProfile] = useState(null);
     const [profilePicture, setProfilePicture] = useState(null);
     const [showNextHandButton, setShowNextHandButton] = useState(false);
+    const audioRef = useRef(null); // Add audioRef with other state declarations
     
     // Add debug logging for chip images
     useEffect(() => {
@@ -141,6 +143,24 @@ const Game = () => {
         setTimeout(() => {
             setRenderTrigger(prev => !prev);
         }, 500);
+    }, []);
+
+    // Add new useEffect for music
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = 0.3; // Set initial volume to 30%
+            audioRef.current.play().catch(error => {
+                console.log("Audio autoplay failed:", error);
+            });
+            audioRef.current.loop = true;
+        }
+
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+        };
     }, []);
 
     // Update card image helper to use Deck of Cards API CDN
@@ -311,7 +331,7 @@ const Game = () => {
         loadProfilePicture();
     }, []);
 
-    
+
     const saveGame = async () => {
         const gameState = {
             currency: currency,
@@ -677,15 +697,34 @@ const endRound = (status) => {
         startNewHand();
     };
 
+    // Add new function to toggle music
+    const toggleMusic = () => {
+        if (audioRef.current.paused) {
+            audioRef.current.play();
+        } else {
+            audioRef.current.pause();
+        }
+    };
+
     return (
         <div className="casino-table">
+            <audio ref={audioRef} src={backgroundMusic} />
+            
+            {/* Add music control button in the header */}
             <div className="game-header">
-                {/* Add home button next to title */}
                 <div className="header-content">
                     <h1 className="game-title">Casino Blackjack</h1>
-                    <button onClick={handleHomeClick} className="home-button">
-                        Home
-                    </button>
+                    <div className="header-buttons">
+                        <button 
+                            className="music-button"
+                            onClick={toggleMusic}
+                        >
+                            {audioRef.current?.paused ? '🔇' : '🔊'}
+                        </button>
+                        <button onClick={handleHomeClick} className="home-button">
+                            Home
+                        </button>
+                    </div>
                 </div>
                 <div className="currency-display">
                     Balance: ${currency.toLocaleString()}
