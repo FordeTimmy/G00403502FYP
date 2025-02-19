@@ -497,3 +497,26 @@ body {
     transform: translateY(-2px);
 }
 
+/* ...existing styles... */
+
+.player-info {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.player-profile-pic {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid gold;
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ...rest of existing styles... */
+

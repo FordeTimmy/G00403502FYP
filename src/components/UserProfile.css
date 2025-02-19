@@ -166,3 +166,50 @@
     margin-bottom: 10px;
     text-align: center;
 }
+
+.profile-picture-container {
+    position: relative;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.profile-picture {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid gold;
+    margin-bottom: 10px;
+    background-color: #333;
+}
+
+/* Small Profile Picture Above Player's Cards */
+.small-profile-picture {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid gold;
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+}
+
+.upload-button {
+    background: #FFD700;
+    color: black;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.upload-button:hover {
+    background: #DAA520;
+    transform: translateY(-2px);
+}

@@ -5,8 +5,42 @@ import './Game.css';
 import { initializeQ, updateQValue, getQTable, chooseAction } from '../utils/qLearning';
 import { simulateGames } from '../utils/simulateGames';
 import { useNavigate } from 'react-router-dom';  // Add this import at the top
+import defaultProfilePic from '../assets/defaultProfilePic.jpg';
 
+// Add these utility functions at the top
+const LOCAL_STORAGE_KEYS = {
+    GAME_STATE: 'blackjack_game_state',
+    CURRENCY: 'blackjack_currency',
+    STATS: 'blackjack_stats'
+};
 
+// Utility functions for local storage
+const saveToLocalStorage = (key, data) => {
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+        console.error('Error saving to localStorage:', error);
+    }
+};
+
+const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        console.error('Error loading from localStorage:', error);
+        return defaultValue;
+    }
+};
+
+// Add this function at the top level
+const handleFirebaseError = (error) => {
+    console.error('Firebase operation failed:', error);
+    if (error.code === 'permission-denied') {
+        console.log('Permission denied. Check Firebase rules and authentication.');
+    }
+    return false;
+};
 
 // Creating the deck and shuffling logic
 const createDeck = () => {
@@ -51,39 +85,38 @@ const calculateHandValue = (hand) => {
 };
 
 const updateUserStats = async (gameResult, betAmount = 0) => {
-    if (!auth.currentUser) return;
+    // Save to localStorage first
+    const stats = loadFromLocalStorage(LOCAL_STORAGE_KEYS.STATS, {
+        handsWon: 0,
+        handsLost: 0,
+        totalAmountWon: 0,
+        totalAmountLost: 0,
+        gamesPlayed: 0
+    });
 
-    const db = getFirestore();
-    const userRef = doc(db, 'users', auth.currentUser.uid);
-    const userSnap = await getDoc(userRef);
-
-    // Initialize stats if they don't exist
-    if (!userSnap.exists()) {
-        await setDoc(userRef, {
-            handsWon: 0,
-            handsLost: 0,
-            totalAmountWon: 0,
-            totalAmountLost: 0,
-            gamesPlayed: 0
-        });
-    }
-
-    const userData = userSnap.exists() ? userSnap.data() : {};
     const isWin = gameResult === 'win';
-
     const newStats = {
-        handsWon: (userData.handsWon || 0) + (isWin ? 1 : 0),
-        handsLost: (userData.handsLost || 0) + (!isWin ? 1 : 0),
-        totalAmountWon: (userData.totalAmountWon || 0) + (isWin ? betAmount : 0),
-        totalAmountLost: (userData.totalAmountLost || 0) + (!isWin ? betAmount : 0),
-        gamesPlayed: (userData.gamesPlayed || 0) + 1
+        handsWon: stats.handsWon + (isWin ? 1 : 0),
+        handsLost: stats.handsLost + (!isWin ? 1 : 0),
+        totalAmountWon: stats.totalAmountWon + (isWin ? betAmount : 0),
+        totalAmountLost: stats.totalAmountLost + (!isWin ? betAmount : 0),
+        gamesPlayed: stats.gamesPlayed + 1,
+        lastUpdated: new Date().toISOString()
     };
 
-    try {
-        await updateDoc(userRef, newStats);
-        console.log("Stats updated successfully:", newStats);
-    } catch (error) {
-        console.error("Error updating stats:", error);
+    // Save to localStorage
+    saveToLocalStorage(LOCAL_STORAGE_KEYS.STATS, newStats);
+
+    // Try to save to Firebase if user is logged in
+    if (auth.currentUser) {
+        try {
+            const db = getFirestore();
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await updateDoc(userRef, newStats);
+            console.log('Stats updated in Firebase');
+        } catch (error) {
+            handleFirebaseError(error);
+        }
     }
 };
 
@@ -92,6 +125,8 @@ const Game = () => {
     const [renderTrigger, setRenderTrigger] = useState(false);
     const [showTutorial, setShowTutorial] = useState(true); // Add new state for tutorial
     const [isAIEnabled, setIsAIEnabled] = useState(true); // Add new state for AI toggle
+    const [playerProfile, setPlayerProfile] = useState(null);
+    const [profilePicture, setProfilePicture] = useState(null);
     
     // Add debug logging for chip images
     useEffect(() => {
@@ -165,92 +200,146 @@ const Game = () => {
     const [activeBet, setActiveBet] = useState(null); // Add this state for the active bet chip
     const [lastAction, setLastAction] = useState(null); // Add state for tracking last action
 
+    // Add new function for localStorage handling
+    const saveGameToLocalStorage = (gameState) => {
+        try {
+            localStorage.setItem('blackjackGameState', JSON.stringify(gameState));
+            console.log('Game saved to localStorage');
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+        }
+    };
+
+    const loadGameFromLocalStorage = () => {
+        try {
+            const savedGame = localStorage.getItem('blackjackGameState');
+            if (savedGame) {
+                const gameState = JSON.parse(savedGame);
+                setCurrency(gameState.currency || 1000);
+                setBet(gameState.bet || 0);
+                setGameStatus(gameState.gameStatus || '');
+                console.log('Game loaded from localStorage');
+            }
+        } catch (error) {
+            console.error('Error loading from localStorage:', error);
+            setCurrency(1000); // Fallback to default
+        }
+    };
+
     // Move useEffect inside the component
     useEffect(() => {
         const loadSavedGame = async () => {
-            if (!auth.currentUser) return;
-
+            let gameState = null;
+            
             try {
-                const db = getFirestore();
-                const userRef = doc(db, 'users', auth.currentUser.uid);
-                const userSnap = await getDoc(userRef);
+                if (auth.currentUser) {
+                    const db = getFirestore();
+                    const userRef = doc(db, 'users', auth.currentUser.uid);
+                    const userSnap = await getDoc(userRef);
 
-                if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    if (userData.savedGame) {
-                        const savedGame = userData.savedGame;
-                        console.log('Loading saved game state:', savedGame);
-                        setCurrency(savedGame.currency || 1000);
-                        setBet(savedGame.bet || 0);
-                        setGameStatus(savedGame.gameStatus || '');
-                    } else {
-                        // Initialize new user with default currency
-                        console.log('Initializing new user with default currency');
-                        await updateDoc(userRef, {
-                            savedGame: {
-                                currency: 1000,
-                                bet: 0,
-                                gameStatus: '',
-                                lastSaved: new Date().toISOString()
-                            }
-                        });
-                        setCurrency(1000);
+                    if (userSnap.exists()) {
+                        gameState = userSnap.data().savedGame;
                     }
                 }
             } catch (error) {
-                console.error('Error loading saved game:', error);
-                alert('Failed to load saved game state');
+                console.log('Firebase error:', error);
             }
+
+            // If Firebase fails or no data, try localStorage
+            if (!gameState) {
+                gameState = loadFromLocalStorage(LOCAL_STORAGE_KEYS.GAME_STATE, {
+                    currency: 1000,
+                    bet: 0,
+                    gameStatus: ''
+                });
+            }
+
+            // Update state with loaded data
+            setCurrency(gameState.currency || 1000);
+            setBet(gameState.bet || 0);
+            setGameStatus(gameState.gameStatus || '');
         };
 
         loadSavedGame();
     }, []);
 
+    useEffect(() => {
+        const loadPlayerProfile = async () => {
+            if (auth.currentUser) {
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                const docSnap = await getDoc(userRef);
+                if (docSnap.exists()) {
+                    setPlayerProfile(docSnap.data());
+                }
+            }
+        };
+        loadPlayerProfile();
+    }, []);
+
+    useEffect(() => {
+        // Load saved profile picture from localStorage
+        const savedPicture = localStorage.getItem('profilePicture');
+        if (savedPicture) {
+            setProfilePicture(savedPicture);
+        }
+    }, []);
+
     
     const saveGame = async () => {
-        if (!auth.currentUser) return;
+        const gameState = {
+            currency: currency,
+            bet: bet,
+            gameStatus: gameStatus,
+            lastSaved: new Date().toISOString()
+        };
 
-        const db = getFirestore();
-        const userRef = doc(db, 'users', auth.currentUser.uid);
+        // Always save to localStorage first
+        saveToLocalStorage(LOCAL_STORAGE_KEYS.GAME_STATE, gameState);
+
+        if (!auth.currentUser) {
+            alert('Game saved locally only (not logged in)');
+            return;
+        }
 
         try {
-            const gameState = {
-                savedGame: {
-                    currency: currency,
-                    bet: bet,
-                    gameStatus: gameStatus,
-                    lastSaved: new Date().toISOString()
-                }
-            };
-            
-            console.log('Saving game state:', gameState);
-            await updateDoc(userRef, gameState);
+            const db = getFirestore();
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await updateDoc(userRef, {
+                savedGame: gameState,
+                lastUpdated: new Date().toISOString()
+            });
+            console.log('Game saved to Firebase');
             alert('Game saved successfully!');
         } catch (error) {
-            console.error('Error saving game:', error);
-            alert('Failed to save game');
+            handleFirebaseError(error);
+            alert('Game saved locally only');
         }
     };
 
     // Add auto-save when currency changes
     useEffect(() => {
         const autoSave = async () => {
-            if (auth.currentUser && currency !== 1000) { // Only save if currency has changed from initial value
-                const db = getFirestore();
-                const userRef = doc(db, 'users', auth.currentUser.uid);
-                
-                try {
-                    await updateDoc(userRef, {
-                        savedGame: {
-                            currency: currency,
-                            bet: bet,
-                            gameStatus: gameStatus,
-                            lastSaved: new Date().toISOString()
-                        }
-                    });
-                    console.log('Auto-saved game state');
-                } catch (error) {
-                    console.error('Error auto-saving game:', error);
+            if (currency !== 1000) { // Only save if currency has changed from initial value
+                const gameState = {
+                    currency: currency,
+                    bet: bet,
+                    gameStatus: gameStatus,
+                    lastSaved: new Date().toISOString()
+                };
+
+                // Always save to localStorage
+                saveGameToLocalStorage(gameState);
+
+                if (auth.currentUser) {
+                    try {
+                        const db = getFirestore();
+                        const userRef = doc(db, 'users', auth.currentUser.uid);
+                        await updateDoc(userRef, { savedGame: gameState });
+                        console.log('Auto-saved to Firebase');
+                    } catch (error) {
+                        handleFirebaseError(error);
+                    }
                 }
             }
         };
@@ -676,6 +765,17 @@ const endRound = (status) => {
             {isSplit ? (
                 <>
                     <div className="player-hand">
+                        <div className="player-profile">
+                            <img 
+                                src={profilePicture || defaultProfilePic} 
+                                alt="Player Profile" 
+                                className="small-profile-picture"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = defaultProfilePic;
+                                }}
+                            />
+                        </div>
                         <h3 className="text-white">Hand 1 ({calculateHandValue(playerHand1)})</h3>
                         <div className="flex gap-2">
                             {playerHand1.map((card, index) => (
@@ -689,6 +789,17 @@ const endRound = (status) => {
                         </div>
                     </div>
                     <div className="player-hand">
+                        <div className="player-profile">
+                            <img 
+                                src={profilePicture || defaultProfilePic} 
+                                alt="Player Profile" 
+                                className="small-profile-picture"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = defaultProfilePic;
+                                }}
+                            />
+                        </div>
                         <h3 className="text-white">Hand 2 ({calculateHandValue(playerHand2)})</h3>
                         <div className="flex gap-2">
                             {playerHand2.map((card, index) => (
@@ -704,6 +815,17 @@ const endRound = (status) => {
                 </>
             ) : (
                 <div className="player-hand">
+                    <div className="player-profile">
+                        <img 
+                            src={profilePicture || defaultProfilePic} 
+                            alt="Player Profile" 
+                            className="small-profile-picture"
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = defaultProfilePic;
+                            }}
+                        />
+                    </div>
                     <h3 className="text-white">Player's Hand ({calculateHandValue(playerHand)})</h3>
                     <div className="flex gap-2">
                         {playerHand.map((card, index) => (

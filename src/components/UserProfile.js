@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserProfile.css';
 import { auth } from '../firebaseConfig';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import PlayerStatsChart from './PlayerStatsChart';
 import { simulateGames } from '../utils/simulateGames';
+import defaultProfilePic from '../assets/defaultProfilePic.jpg';
 
 const UserProfile = () => {
     const navigate = useNavigate();
@@ -12,6 +14,104 @@ const UserProfile = () => {
     const [showStats, setShowStats] = useState(false);
     const [stats, setStats] = useState(null);
     const [isTraining, setIsTraining] = useState(false);
+    const [profilePicture, setProfilePicture] = useState(null);
+
+    useEffect(() => {
+        const loadProfilePicture = async () => {
+            try {
+                if (auth.currentUser) {
+                    const db = getFirestore();
+                    const userRef = doc(db, 'users', auth.currentUser.uid);
+                    const docSnap = await getDoc(userRef);
+                    
+                    if (docSnap.exists() && docSnap.data().profilePicture) {
+                        setProfilePicture(docSnap.data().profilePicture);
+                        // Also update localStorage
+                        localStorage.setItem('profilePicture', docSnap.data().profilePicture);
+                    } else {
+                        // Try loading from localStorage if no Firebase data
+                        const localPicture = localStorage.getItem('profilePicture');
+                        if (localPicture) {
+                            setProfilePicture(localPicture);
+                        }
+                    }
+                } else {
+                    // Not logged in, try localStorage
+                    const localPicture = localStorage.getItem('profilePicture');
+                    if (localPicture) {
+                        setProfilePicture(localPicture);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading profile picture:', error);
+                // Fallback to localStorage
+                const localPicture = localStorage.getItem('profilePicture');
+                if (localPicture) {
+                    setProfilePicture(localPicture);
+                }
+            }
+        };
+
+        loadProfilePicture();
+    }, []);
+
+    const handleProfilePictureChange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            // First save to localStorage as backup
+            const reader = new FileReader();
+            reader.onload = () => {
+                const imageBase64 = reader.result;
+                localStorage.setItem('profilePicture', imageBase64);
+            };
+            reader.readAsDataURL(file);
+
+            // Then upload to Firebase Storage
+            const storage = getStorage();
+            const storageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            // Update Firestore with the image URL
+            if (auth.currentUser) {
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                await updateDoc(userRef, {
+                    profilePicture: downloadURL,
+                    lastUpdated: new Date().toISOString()
+                });
+            }
+
+            // Update state
+            setProfilePicture(downloadURL);
+            console.log('Profile picture uploaded successfully');
+
+        } catch (error) {
+            console.error('Error uploading profile picture:', error);
+            // If Firebase fails, at least we have the local version
+            const reader = new FileReader();
+            reader.onload = () => {
+                const imageBase64 = reader.result;
+                localStorage.setItem('profilePicture', imageBase64);
+                setProfilePicture(imageBase64);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const renderProfileImage = () => (
+        <img 
+            src={profilePicture || defaultProfilePic} 
+            alt="Profile" 
+            className="profile-picture"
+            onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = defaultProfilePic;
+            }}
+        />
+    );
 
     const handleViewStats = async () => {
         if (auth.currentUser) {
@@ -38,6 +138,22 @@ const UserProfile = () => {
 
     return (
         <div className="profile-container">
+            <div className="profile-picture-container">
+                {renderProfileImage()}
+                <input
+                    type="file"
+                    id="profilePicUpload"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleProfilePictureChange}
+                />
+                <button 
+                    className="upload-button"
+                    onClick={() => document.getElementById('profilePicUpload').click()}
+                >
+                    Change Picture
+                </button>
+            </div>
             <h1>Welcome!</h1>
             <div className="profile-actions">
                 <button 
