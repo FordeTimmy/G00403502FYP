@@ -183,7 +183,6 @@
     background-color: #333;
 }
 
-/* Small Profile Picture Above Player's Cards */
 .small-profile-picture {
     width: 50px;
     height: 50px;
@@ -191,11 +190,12 @@
     object-fit: cover;
     border: 2px solid gold;
     position: absolute;
-    top: -30px;
-    left: 50%;
+    bottom: 190px; /* Lower the image */
+    left: 48%; /* Move the image to the left */
     transform: translateX(-50%);
     background-color: #333;
 }
+
 
 .upload-button {
     background: #FFD700;
