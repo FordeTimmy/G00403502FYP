@@ -127,6 +127,7 @@ const Game = () => {
     const [isAIEnabled, setIsAIEnabled] = useState(true); // Add new state for AI toggle
     const [playerProfile, setPlayerProfile] = useState(null);
     const [profilePicture, setProfilePicture] = useState(null);
+    const [showNextHandButton, setShowNextHandButton] = useState(false);
     
     // Add debug logging for chip images
     useEffect(() => {
@@ -196,7 +197,6 @@ const Game = () => {
     const [playerHand1, setPlayerHand1] = useState([]);
     const [playerHand2, setPlayerHand2] = useState([]);
     const [isPaused, setIsPaused] = useState(false); // Pause status
-    const [timer, setTimer] = useState(null); // Timer for auto-dealing
     const [activeBet, setActiveBet] = useState(null); // Add this state for the active bet chip
     const [lastAction, setLastAction] = useState(null); // Add state for tracking last action
 
@@ -382,7 +382,6 @@ const Game = () => {
         setPlayerHand1([]);
         setPlayerHand2([]);
         setBet(betAmount); // Update the bet
-        clearTimeout(timer); // Clear any existing timer if a new game starts
 
         // Initialize Q-values for the initial game state
         const currentState = `${calculateHandValue(playerInitialHand)}-${dealerInitialHand[0].value}-${getCardValue(playerInitialHand[0]) === getCardValue(playerInitialHand[1]) ? '1' : '0'}-1`;
@@ -392,7 +391,7 @@ const Game = () => {
     // Function to handle the end of a round
 const endRound = (status) => {
     console.log("endRound called with status:", status);  // Debugging log
-    setGameStatus(`${status} New hand starting in 5 seconds...`);
+    setGameStatus(`${status}`); // Remove the "New hand starting" message
     setIsDoubleDownAllowed(false); // Disable double down after the round ends
 
     // Improve result determination logic
@@ -428,21 +427,14 @@ const endRound = (status) => {
         updateUserStats(result, bet);
     }
 
-    // Only set the timer if the game is not paused
-    if (!isPaused) {
-        const newTimer = setTimeout(() => {
-            console.log("Timer triggered - calling startNewHand");  // Debugging log
-            startNewHand();
-        }, 5000);
-        setTimer(newTimer); // Update the timer state
-    }
+    // Show the Next Hand button instead of auto-starting
+    setShowNextHandButton(true);
 };
     
 
     // Function to start a new hand automatically
     const startNewHand = () => {
         console.log("startNewHand called");  // Debugging log
-        clearTimeout(timer); // Ensure any old timer is cleared
         setGameStatus('');
         setBet(0);
         setCanBet(true);
@@ -457,20 +449,9 @@ const endRound = (status) => {
         if (isPaused) {
             // Resume game - restore previous game status
             setGameStatus('Playing...');
-        } else {
-            // Pause game - clear any pending timers
-            clearTimeout(timer);
         }
         setIsPaused(!isPaused);
     };
-
-    // UseEffect to clean up the timer on component unmount
-    useEffect(() => {
-        return () => {
-            console.log("Cleaning up timer");  // Debugging log
-            clearTimeout(timer);
-        };
-    }, [timer]);
     
 // Function to handle the player hitting 
     const hit = () => {
@@ -664,6 +645,12 @@ const endRound = (status) => {
         }
     };
 
+    // Add new function to handle next hand
+    const handleNextHand = () => {
+        setShowNextHandButton(false); // Hide the button
+        startNewHand();
+    };
+
     return (
         <div className="casino-table">
             <div className="game-header">
@@ -855,6 +842,16 @@ const endRound = (status) => {
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* Add Next Hand button before the controls */}
+            {showNextHandButton && (
+                <button 
+                    className="next-hand-button"
+                    onClick={handleNextHand}
+                >
+                    Deal Next Hand
+                </button>
             )}
 
             {/* Game controls - remove start game button */}

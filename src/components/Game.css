@@ -520,3 +520,26 @@ body {
 
 /* ...rest of existing styles... */
 
+.next-hand-button {
+    position: fixed;
+    bottom: 100px;  /* Position above the controls */
+    left: 50%;
+    transform: translateX(-50%);
+    background: #FFD700;
+    color: black;
+    font-weight: bold;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.next-hand-button:hover {
+    background: #DAA520;
+    transform: translateX(-50%) translateY(-2px);
+}
+
