@@ -5,7 +5,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    background-color: #0B6623;
+    background-color: #0F8A32; /* Brighter green */
     font-family: "Arial", sans-serif;
     max-width: 100vw;
     max-height: 100vh;
@@ -63,7 +63,7 @@
     gap: 10px;
     padding: 20px;
     z-index: 10;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6); /* Less opaque background */
     border-radius: 15px;
     width: 90%;
     max-width: 800px;
@@ -136,7 +136,7 @@
     gap: 20px;
     padding: 20px;
     z-index: 20;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.2); /* Much lighter background */
     border-radius: 15px;
 }
 
@@ -305,7 +305,7 @@
 }
 
 .game-header {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6); /* Less opaque background */
     padding: 20px;
     border-radius: 15px;
     margin-bottom: 30px;
@@ -336,7 +336,7 @@
     bottom: 5%;
     right: 2%;
     transform: translateY(0);  /* Remove vertical transform since we're using bottom now */
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.7); /* Less opaque background */
     color: white;
     padding: 15px 30px;
     border-radius: 15px;
@@ -380,7 +380,7 @@ body {
     position: absolute;
     bottom: 20%;
     right: 25%;
-    background-color: rgba(40, 44, 52, 0.9);
+    background-color: rgba(40, 44, 52, 0.7); /* Less opaque background */
     color: white;
     padding: 15px 20px;
     font-size: 1.2em;
@@ -541,5 +541,240 @@ body {
 .next-hand-button:hover {
     background: #DAA520;
     transform: translateX(-50%) translateY(-2px);
+}
+
+/* Add responsive design rules */
+@media screen and (max-width: 768px) {
+    .casino-table {
+        padding: 10px;
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+
+    .game-header {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+
+    .game-title {
+        font-size: 1.8rem;
+    }
+
+    .currency-display {
+        font-size: 1.2rem;
+        padding: 8px 15px;
+    }
+
+    .betting-chips {
+        position: fixed;
+        bottom: 150px;
+        right: 10px;
+        top: auto;
+        transform: none;
+        flex-direction: row;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .chip {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .chip-label {
+        font-size: 16px;
+    }
+
+    .controls {
+        bottom: 10px;
+        padding: 10px;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .controls button {
+        padding: 8px 12px;
+        font-size: 14px;
+        min-width: 80px;
+    }
+
+    .dealer-hand, .player-hand {
+        padding: 10px;
+        min-height: 100px;
+        flex-wrap: wrap;
+    }
+
+    .card {
+        width: 60px;
+        height: 90px;
+        margin: 2px;
+    }
+
+    .game-status {
+        bottom: 120px;
+        right: 10px;
+        font-size: 1rem;
+        padding: 10px 20px;
+        max-width: 200px;
+    }
+
+    .ai-suggestion {
+        bottom: 180px;
+        right: 10px;
+        padding: 10px;
+        font-size: 1rem;
+    }
+
+    .next-hand-button {
+        bottom: 80px;
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+
+    .pot-container {
+        top: 45%;
+    }
+
+    .pot-chip {
+        width: 40px;
+        height: 40px;
+    }
+
+    .pot-chip-label {
+        font-size: 16px;
+    }
+
+    .bet-amount {
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .ai-toggle {
+        top: auto;
+        bottom: 200px;
+        right: 10px;
+    }
+
+    .ai-toggle-button {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+}
+
+/* Add even smaller screen support */
+@media screen and (max-width: 480px) {
+    .game-title {
+        font-size: 1.5rem;
+    }
+
+    .controls button {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-width: 70px;
+    }
+
+    .card {
+        width: 50px;
+        height: 75px;
+    }
+
+    .betting-chips {
+        bottom: 120px;
+    }
+
+    .chip {
+        width: 35px !important;
+        height: 35px !important;
+    }
+
+    .chip-label {
+        font-size: 14px;
+    }
+
+    .game-status {
+        font-size: 0.9rem;
+        max-width: 180px;
+    }
+
+    .currency-display {
+        font-size: 1rem;
+    }
+
+    .next-hand-button {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+}
+
+/* Add landscape orientation support */
+@media screen and (max-height: 600px) and (orientation: landscape) {
+    .casino-table {
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .betting-chips {
+        position: fixed;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        flex-direction: column;
+    }
+
+    .controls {
+        position: fixed;
+        right: 10px;
+        left: auto;
+        transform: none;
+        flex-direction: column;
+        width: auto;
+        max-width: 120px;
+    }
+
+    .dealer-hand, .player-hand {
+        margin-right: 130px;
+    }
+
+    .game-status {
+        bottom: 10px;
+        right: 130px;
+    }
+
+    .next-hand-button {
+        right: 130px;
+        left: auto;
+        transform: none;
+    }
+}
+
+/* Add high-DPI (retina) display support */
+@media screen and (min-resolution: 192dpi) {
+    .card, .chip {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Add dark mode support for OLED screens */
+@media screen and (prefers-color-scheme: dark) {
+    .casino-table {
+        background-color: #0F8A32; /* Keep same bright color in dark mode */
+    }
+
+    .game-header {
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .controls {
+        background: rgba(0, 0, 0, 0.6);
+    }
+}
+
+/* Make text more visible */
+.text-white {
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
