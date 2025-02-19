@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import './Login.css';
 
 const Login = () => {
@@ -9,6 +9,18 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is already signed in, redirect to profile
+                navigate('/profile');
+            }
+        });
+
+        // Cleanup subscription
+        return () => unsubscribe();
+    }, [navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
