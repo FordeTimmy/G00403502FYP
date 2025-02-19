@@ -67,36 +67,23 @@
     font-weight: bold;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
+    background: #FFD700;  /* Yellow background for all buttons */
+    color: black;         /* Black text for all buttons */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.login-container .login-button {
-    background: #FFD700;
-    color: black;
-}
-
-.login-container .login-button:hover {
+.login-container .login-button:hover,
+.login-container .back-button:hover,
+.login-container .register-button:hover {
     background: #DAA520;
     transform: translateY(-2px);
 }
 
-.login-container .back-button {
-    background: #4CAF50;
-    color: white;
-}
-
-.login-container .back-button:hover {
-    background: #45a049;
-    transform: translateY(-2px);
-}
-
+/* Remove any specific button color overrides */
+.login-container .back-button,
 .login-container .register-button {
-    background: #4A90E2;
-    color: white;
-}
-
-.login-container .register-button:hover {
-    background: #357ABD;
-    transform: translateY(-2px);
+    background: #FFD700;  /* Keep yellow background */
+    color: black;         /* Keep black text */
 }
 
 .error-message {
