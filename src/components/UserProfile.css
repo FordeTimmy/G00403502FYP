@@ -191,7 +191,7 @@
     border: 2px solid gold;
     position: absolute;
     bottom: 190px; /* Lower the image */
-    left: 48%; /* Move the image to the left */
+    left: 44%; /* Move the image to the left */
     transform: translateX(-50%);
     background-color: #333;
 }
