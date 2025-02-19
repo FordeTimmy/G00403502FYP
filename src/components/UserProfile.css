@@ -21,7 +21,13 @@
     gap: 20px;
 }
 
-.game-button {
+/* Update all button styles to match theme */
+.profile-button,
+.stats-button,
+.game-button,
+.back-button,
+.profile-content button,
+.close-button {
     background: #FFD700;
     color: black;
     font-size: 1.5rem;
@@ -29,56 +35,26 @@
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background-color 0.2s;
     font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 250px;
+    text-align: center;
 }
 
-.game-button:hover {
-    transform: translateY(-2px);
+/* Unified hover effect */
+.profile-button:hover,
+.stats-button:hover,
+.game-button:hover,
+.back-button:hover,
+.profile-content button:hover,
+.close-button:hover {
     background: #DAA520;
-}
-
-.back-button {
-    background: #4CAF50;
-    color: white;
-    font-size: 1.5rem;
-    padding: 15px 40px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.profile-button {
-    background: #4A90E2;
-    color: white;
-    font-size: 1.5rem;
-    padding: 15px 40px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s;
-    font-weight: bold;
-    margin-bottom: 20px;
-}
-
-.stats-button {
-    background: #E67E22;
-    color: white;
-    font-size: 1.5rem;
-    padding: 15px 40px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s;
-    font-weight: bold;
-    margin-bottom: 20px;
-}
-
-.stats-button:hover {
     transform: translateY(-2px);
-    background: #D35400;
 }
+
+/* Remove any individual button color styles */
+/* Delete or comment out any specific button styling */
 
 .stats-grid {
     display: grid;
