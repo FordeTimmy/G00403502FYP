@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { auth } from './firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { SettingsProvider } from './context/SettingsContext';
 import Game from './components/Game';
 import Home from './components/Home';
@@ -21,6 +21,15 @@ function App() {
 
         return () => unsubscribe();
     }, []);
+
+    const handleLogout = () => {
+        // Clear user-specific data from localStorage
+        if (auth.currentUser) {
+            localStorage.removeItem(`profilePicture_${auth.currentUser.uid}`);
+        }
+        // Proceed with normal logout
+        signOut(auth);
+    };
 
     if (loading) {
         return <div>Loading...</div>;

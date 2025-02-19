@@ -8,6 +8,9 @@ import PlayerStatsChart from './PlayerStatsChart';
 import { simulateGames } from '../utils/simulateGames';
 import defaultProfilePic from '../assets/defaultProfilePic.jpg';
 
+// Update the localStorage key to be user-specific
+const getUserStorageKey = (userId) => `profilePicture_${userId}`;
+
 const UserProfile = () => {
     const navigate = useNavigate();
     const [showProfile, setShowProfile] = useState(false);
@@ -26,78 +29,56 @@ const UserProfile = () => {
                     
                     if (docSnap.exists() && docSnap.data().profilePicture) {
                         setProfilePicture(docSnap.data().profilePicture);
-                        // Also update localStorage
-                        localStorage.setItem('profilePicture', docSnap.data().profilePicture);
-                    } else {
-                        // Try loading from localStorage if no Firebase data
-                        const localPicture = localStorage.getItem('profilePicture');
-                        if (localPicture) {
-                            setProfilePicture(localPicture);
-                        }
-                    }
-                } else {
-                    // Not logged in, try localStorage
-                    const localPicture = localStorage.getItem('profilePicture');
-                    if (localPicture) {
-                        setProfilePicture(localPicture);
+                        // Store in user-specific localStorage key
+                        localStorage.setItem(getUserStorageKey(auth.currentUser.uid), docSnap.data().profilePicture);
                     }
                 }
             } catch (error) {
                 console.error('Error loading profile picture:', error);
-                // Fallback to localStorage
-                const localPicture = localStorage.getItem('profilePicture');
-                if (localPicture) {
-                    setProfilePicture(localPicture);
+                // Try local storage with user-specific key as fallback
+                if (auth.currentUser) {
+                    const localPicture = localStorage.getItem(getUserStorageKey(auth.currentUser.uid));
+                    if (localPicture) {
+                        setProfilePicture(localPicture);
+                    }
                 }
             }
         };
 
         loadProfilePicture();
+        
+        // Cleanup function to reset profile picture when component unmounts
+        return () => {
+            setProfilePicture(null);
+        };
     }, []);
 
     const handleProfilePictureChange = async (event) => {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file || !auth.currentUser) return;
 
         try {
-            // First save to localStorage as backup
-            const reader = new FileReader();
-            reader.onload = () => {
-                const imageBase64 = reader.result;
-                localStorage.setItem('profilePicture', imageBase64);
-            };
-            reader.readAsDataURL(file);
-
-            // Then upload to Firebase Storage
+            // Upload to Firebase Storage
             const storage = getStorage();
             const storageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
             const snapshot = await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
 
-            // Update Firestore with the image URL
-            if (auth.currentUser) {
-                const db = getFirestore();
-                const userRef = doc(db, 'users', auth.currentUser.uid);
-                await updateDoc(userRef, {
-                    profilePicture: downloadURL,
-                    lastUpdated: new Date().toISOString()
-                });
-            }
+            // Update Firestore
+            const db = getFirestore();
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await updateDoc(userRef, {
+                profilePicture: downloadURL,
+                lastUpdated: new Date().toISOString()
+            });
 
-            // Update state
+            // Update state and user-specific localStorage
             setProfilePicture(downloadURL);
+            localStorage.setItem(getUserStorageKey(auth.currentUser.uid), downloadURL);
+            
             console.log('Profile picture uploaded successfully');
-
         } catch (error) {
             console.error('Error uploading profile picture:', error);
-            // If Firebase fails, at least we have the local version
-            const reader = new FileReader();
-            reader.onload = () => {
-                const imageBase64 = reader.result;
-                localStorage.setItem('profilePicture', imageBase64);
-                setProfilePicture(imageBase64);
-            };
-            reader.readAsDataURL(file);
         }
     };
 

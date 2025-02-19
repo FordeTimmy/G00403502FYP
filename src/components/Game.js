@@ -285,6 +285,32 @@ const Game = () => {
         }
     }, []);
 
+    useEffect(() => {
+        const loadProfilePicture = async () => {
+            if (auth.currentUser) {
+                try {
+                    const db = getFirestore();
+                    const userRef = doc(db, 'users', auth.currentUser.uid);
+                    const docSnap = await getDoc(userRef);
+                    
+                    if (docSnap.exists() && docSnap.data().profilePicture) {
+                        setProfilePicture(docSnap.data().profilePicture);
+                    } else {
+                        // Use default profile picture if none is set
+                        setProfilePicture(defaultProfilePic);
+                    }
+                } catch (error) {
+                    console.error('Error loading profile picture:', error);
+                    setProfilePicture(defaultProfilePic);
+                }
+            } else {
+                setProfilePicture(defaultProfilePic);
+            }
+        };
+
+        loadProfilePicture();
+    }, []);
+
     
     const saveGame = async () => {
         const gameState = {
