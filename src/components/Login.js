@@ -22,15 +22,57 @@ const Login = () => {
         return () => unsubscribe();
     }, [navigate]);
 
+    const verifyTokenWithBackend = async (firebaseToken) => {
+        const response = await fetch("http://localhost:5000/api/verify-token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ firebaseToken })
+        });
+
+        const data = await response.json();
+        console.log("Backend Response:", data);
+
+        if (!response.ok) {
+            throw new Error(data.message || "Token verification failed");
+        }
+
+        return data;
+    };
+
     const handleLogin = async (e) => {
         e.preventDefault();
+        setError('');
+
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            console.log("Login successful, navigating to profile...");
-            navigate('/profile'); // Ensure this line executes
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Get Firebase authentication token
+            const firebaseToken = await user.getIdToken();
+            console.log("Generated Firebase Token:", firebaseToken);
+
+            try {
+                // Verify token with backend
+                const verificationResult = await verifyTokenWithBackend(firebaseToken);
+                
+                if (verificationResult.token) {
+                    localStorage.setItem("token", verificationResult.token);
+                    console.log("Navigation to profile...");
+                    navigate('/profile');
+                } else {
+                    throw new Error("No token received from backend");
+                }
+            } catch (verifyError) {
+                console.error("Token verification failed:", verifyError);
+                setError('Authentication failed. Please try again.');
+                localStorage.removeItem("token");
+            }
         } catch (error) {
             console.error("Login error:", error);
             setError('Invalid email or password');
+            localStorage.removeItem("token");
         }
     };
 
