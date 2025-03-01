@@ -18,6 +18,9 @@ const UserProfile = () => {
     const [stats, setStats] = useState(null);
     const [isTraining, setIsTraining] = useState(false);
     const [profilePicture, setProfilePicture] = useState(null);
+    const [showRedeemModal, setShowRedeemModal] = useState(false);
+    const [redeemCode, setRedeemCode] = useState('');
+    const [redeemMessage, setRedeemMessage] = useState({ text: '', type: '' });
 
     useEffect(() => {
         const loadProfilePicture = async () => {
@@ -117,6 +120,56 @@ const UserProfile = () => {
         setIsTraining(false);
     };
 
+    const handleRedeemCode = async () => {
+        if (!redeemCode.trim()) {
+            setRedeemMessage({ text: 'Please enter a code', type: 'error' });
+            return;
+        }
+
+        try {
+            const userToken = localStorage.getItem("token");
+            const response = await fetch("http://localhost:5000/api/redeem-currency-code", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${userToken}`
+                },
+                body: JSON.stringify({ code: redeemCode })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Update Firestore with new balance
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                
+                // Get current balance
+                const userDoc = await getDoc(userRef);
+                const currentBalance = userDoc.data()?.currency || 0;
+                
+                // Update balance in Firestore
+                await updateDoc(userRef, {
+                    currency: currentBalance + data.amount,
+                    lastUpdated: new Date().toISOString()
+                });
+
+                // Store updated balance in localStorage
+                localStorage.setItem('blackjack_currency', (currentBalance + data.amount).toString());
+
+                setRedeemMessage({ 
+                    text: `Success! Received ${data.amount} credits. New balance: ${currentBalance + data.amount}`, 
+                    type: 'success' 
+                });
+                setRedeemCode('');
+            } else {
+                setRedeemMessage({ text: data.message || 'Invalid code', type: 'error' });
+            }
+        } catch (error) {
+            setRedeemMessage({ text: 'Failed to redeem code', type: 'error' });
+        }
+    };
+
     return (
         <div className="profile-container">
             <div className="profile-picture-container">
@@ -154,6 +207,12 @@ const UserProfile = () => {
                     onClick={() => navigate('/game')}
                 >
                     Play Blackjack
+                </button>
+                <button 
+                    className="redeem-button"
+                    onClick={() => setShowRedeemModal(true)}
+                >
+                    Redeem Code
                 </button>
                 <button 
                     className="back-button"
@@ -212,6 +271,48 @@ const UserProfile = () => {
                         <p>Email: {auth.currentUser?.email}</p>
                         {/* We can add more user stats here later */}
                         <button onClick={() => setShowProfile(false)}>Close</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Redeem Code Modal */}
+            {showRedeemModal && (
+                <div className="profile-modal">
+                    <div className="profile-content redeem-content">
+                        <h2>Redeem Currency Code</h2>
+                        <div className="redeem-form">
+                            <input
+                                type="text"
+                                value={redeemCode}
+                                onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                                placeholder="Enter your code"
+                                className="redeem-input"
+                                maxLength="20"
+                            />
+                            {redeemMessage.text && (
+                                <div className={`redeem-message ${redeemMessage.type}`}>
+                                    {redeemMessage.text}
+                                </div>
+                            )}
+                            <div className="redeem-buttons">
+                                <button 
+                                    onClick={handleRedeemCode}
+                                    className="submit-code-button"
+                                >
+                                    Submit
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        setShowRedeemModal(false);
+                                        setRedeemCode('');
+                                        setRedeemMessage({ text: '', type: '' });
+                                    }}
+                                    className="close-button"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

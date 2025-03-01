@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseConfig';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 import './Login.css';
 
 const Login = () => {
@@ -23,22 +24,65 @@ const Login = () => {
     }, [navigate]);
 
     const verifyTokenWithBackend = async (firebaseToken) => {
-        const response = await fetch("http://localhost:5000/api/verify-token", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ firebaseToken })
-        });
+        try {
+            const response = await fetch("http://localhost:5000/api/verify-token", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ firebaseToken })
+            });
 
-        const data = await response.json();
-        console.log("Backend Response:", data);
+            const data = await response.json();
+            console.log("Backend Response:", data);
 
-        if (!response.ok) {
-            throw new Error(data.message || "Token verification failed");
+            if (!response.ok) {
+                throw new Error(data.message || "Token verification failed");
+            }
+
+            // Store balance in both localStorage and Firestore
+            if (data.balance) {
+                localStorage.setItem('blackjack_currency', data.balance.toString());
+                
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                await updateDoc(userRef, {
+                    currency: data.balance,
+                    lastUpdated: new Date().toISOString()
+                });
+            }
+
+            return data;
+        } catch (error) {
+            console.error("Token verification error:", error);
+            throw error;
         }
+    };
 
-        return data;
+    const requestCurrencyCode = async (token) => {
+        try {
+            const response = await fetch("http://localhost:5000/api/send-currency-code", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            console.log("Currency Code Response:", data);
+            
+            if (response.ok && data.code) {
+                // Store the currency code in localStorage for later use
+                localStorage.setItem("currency_code", data.code);
+                console.log("Currency code stored:", data.code);
+            }
+            
+            return data;
+        } catch (error) {
+            console.error("Currency code request failed:", error);
+            throw error;
+        }
     };
 
     const handleLogin = async (e) => {
@@ -47,31 +91,37 @@ const Login = () => {
 
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // Get Firebase authentication token
-            const firebaseToken = await user.getIdToken();
-            console.log("Generated Firebase Token:", firebaseToken);
-
-            try {
-                // Verify token with backend
-                const verificationResult = await verifyTokenWithBackend(firebaseToken);
+            const firebaseToken = await userCredential.user.getIdToken();
+            
+            // Verify token and get initial balance
+            const verificationResult = await verifyTokenWithBackend(firebaseToken);
+            
+            if (verificationResult.token) {
+                localStorage.setItem("token", verificationResult.token);
                 
-                if (verificationResult.token) {
-                    localStorage.setItem("token", verificationResult.token);
-                    console.log("Navigation to profile...");
-                    navigate('/profile');
-                } else {
-                    throw new Error("No token received from backend");
+                // Store initial balance
+                if (verificationResult.balance) {
+                    const db = getFirestore();
+                    const userRef = doc(db, 'users', auth.currentUser.uid);
+                    await updateDoc(userRef, {
+                        currency: verificationResult.balance,
+                        lastUpdated: new Date().toISOString()
+                    });
                 }
-            } catch (verifyError) {
-                console.error("Token verification failed:", verifyError);
-                setError('Authentication failed. Please try again.');
-                localStorage.removeItem("token");
+
+                try {
+                    await requestCurrencyCode(verificationResult.token);
+                    navigate('/profile');
+                } catch (currencyError) {
+                    console.error("Currency code error:", currencyError);
+                    navigate('/profile');
+                }
+            } else {
+                throw new Error("No token received from backend");
             }
         } catch (error) {
             console.error("Login error:", error);
-            setError('Invalid email or password');
+            setError(error.message || 'Authentication failed. Please try again.');
             localStorage.removeItem("token");
         }
     };

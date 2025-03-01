@@ -7,6 +7,7 @@ import { simulateGames } from '../utils/simulateGames';
 import { useNavigate } from 'react-router-dom';  // Add this import at the top
 import defaultProfilePic from '../assets/defaultProfilePic.jpg';
 import backgroundMusic from '../assets/music/backgroundMusic.mp3';
+import { useSettings } from '../context/SettingsContext'; // Add this import
 
 // Add these utility functions at the top
 const LOCAL_STORAGE_KEYS = {
@@ -123,6 +124,7 @@ const updateUserStats = async (gameResult, betAmount = 0) => {
 
 const Game = () => {
     const navigate = useNavigate();  // Add this hook
+    const { volume } = useSettings(); // Add settings hook near other state declarations
     const [renderTrigger, setRenderTrigger] = useState(false);
     const [showTutorial, setShowTutorial] = useState(true); // Add new state for tutorial
     const [isAIEnabled, setIsAIEnabled] = useState(true); // Add new state for AI toggle
@@ -148,7 +150,7 @@ const Game = () => {
     // Add new useEffect for music
     useEffect(() => {
         if (audioRef.current) {
-            audioRef.current.volume = 0.3; // Set initial volume to 30%
+            audioRef.current.volume = volume / 100; // Convert percentage to decimal
             audioRef.current.play().catch(error => {
                 console.log("Audio autoplay failed:", error);
             });
@@ -161,7 +163,7 @@ const Game = () => {
                 audioRef.current.currentTime = 0;
             }
         };
-    }, []);
+    }, [volume]); // Add volume as dependency
 
     // Update card image helper to use Deck of Cards API CDN
     const getCardImage = (card) => {
@@ -331,6 +333,33 @@ const Game = () => {
         loadProfilePicture();
     }, []);
 
+    // Add new useEffect to load currency from Firestore
+    useEffect(() => {
+        const loadUserCurrency = async () => {
+            if (auth.currentUser) {
+                try {
+                    const db = getFirestore();
+                    const userRef = doc(db, 'users', auth.currentUser.uid);
+                    const userDoc = await getDoc(userRef);
+                    
+                    if (userDoc.exists()) {
+                        const userCurrency = userDoc.data().currency || 1000;
+                        setCurrency(userCurrency);
+                        localStorage.setItem('blackjack_currency', userCurrency.toString());
+                    }
+                } catch (error) {
+                    console.error('Error loading currency:', error);
+                    // Fallback to localStorage
+                    const savedCurrency = localStorage.getItem('blackjack_currency');
+                    if (savedCurrency) {
+                        setCurrency(parseInt(savedCurrency));
+                    }
+                }
+            }
+        };
+
+        loadUserCurrency();
+    }, []); // Run once when component mounts
 
     const saveGame = async () => {
         const gameState = {
@@ -342,6 +371,7 @@ const Game = () => {
 
         // Always save to localStorage first
         saveToLocalStorage(LOCAL_STORAGE_KEYS.GAME_STATE, gameState);
+        localStorage.setItem('blackjack_currency', currency.toString());
 
         if (!auth.currentUser) {
             alert('Game saved locally only (not logged in)');
@@ -353,6 +383,7 @@ const Game = () => {
             const userRef = doc(db, 'users', auth.currentUser.uid);
             await updateDoc(userRef, {
                 savedGame: gameState,
+                currency: currency,
                 lastUpdated: new Date().toISOString()
             });
             console.log('Game saved to Firebase');
@@ -685,11 +716,49 @@ const endRound = (status) => {
     };
 
     // Add this function to handle navigation
-    const handleHomeClick = () => {
-        if (window.confirm('Are you sure you want to return to the home page? Current game progress will be lost.')) {
+    const saveBalance = async () => {
+        if (auth.currentUser) {
+            try {
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                await updateDoc(userRef, {
+                    currency: currency,
+                    lastUpdated: new Date().toISOString()
+                });
+                console.log('Balance saved before navigation');
+            } catch (error) {
+                console.error('Error saving balance:', error);
+            }
+        }
+    };
+
+    // Update handleHomeClick
+    const handleHomeClick = async () => {
+        if (auth.currentUser) {
+            await saveBalance();
+            navigate('/');
+        } else if (window.confirm('Are you sure you want to return to the home page? Current game progress will be lost.')) {
             navigate('/');
         }
     };
+
+    // Add beforeunload event listener
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (!auth.currentUser) {
+                event.preventDefault();
+                event.returnValue = "Are you sure you want to leave? Your progress will be lost.";
+            } else {
+                saveBalance();
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [currency]); // Add currency as dependency to ensure latest value is saved
 
     // Add new function to handle next hand
     const handleNextHand = () => {
@@ -716,10 +785,13 @@ const endRound = (status) => {
                     <h1 className="game-title">Casino Blackjack</h1>
                     <div className="header-buttons">
                         <button 
-                            className="music-button"
+                            className={`music-button ${audioRef.current?.paused ? 'muted' : ''}`}
                             onClick={toggleMusic}
+                            aria-label={audioRef.current?.paused ? 'Unmute' : 'Mute'}
                         >
-                            {audioRef.current?.paused ? '🔇' : '🔊'}
+                            <span className={audioRef.current?.paused ? 'muted-icon' : ''}>
+                                {audioRef.current?.paused ? '🔊' : '🔊'}
+                            </span>
                         </button>
                         <button onClick={handleHomeClick} className="home-button">
                             Home

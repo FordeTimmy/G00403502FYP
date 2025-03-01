@@ -667,6 +667,10 @@ body {
         padding: 8px 12px;
         font-size: 1rem;
     }
+
+    .muted-icon::after {
+        height: 1px;
+    }
 }
 
 /* Add even smaller screen support */
@@ -791,6 +795,7 @@ body {
     align-items: center;
 }
 
+/* Update music button styles */
 .music-button {
     background: #FFD700;
     color: black;
@@ -800,12 +805,54 @@ body {
     border-radius: 8px;
     cursor: pointer;
     font-size: 1.2rem;
-    transition: background-color 0.2s, transform 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    position: relative;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
 }
 
-.music-button:hover {
-    background: #DAA520;
-    transform: translateY(-2px);
+.music-button span {
+    position: relative;
+    display: inline-block;
+    font-size: 1.5rem;
+}
+
+/* New mute line styles */
+.muted-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    width: 140%;
+    height: 3px;
+    background-color: #ff0000;
+    transform: translateY(-50%) translateX(-15%) rotate(-45deg);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.music-button.muted {
+    background-color: #DAA520;
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 768px) {
+    .music-button {
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+    }
+
+    .music-button span {
+        font-size: 1.2rem;
+    }
+
+    .muted-icon::after {
+        height: 2px;
+    }
 }
 
