@@ -129,12 +129,12 @@
 .betting-chips {
     position: fixed;
     top: 50%;
-    right: 40px;
+    left: 10px;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
+    gap: 10px;
+    padding: 10px;
     z-index: 20;
     background: rgba(0, 0, 0, 0.2); /* Much lighter background */
     border-radius: 15px;
@@ -222,7 +222,7 @@
 
 .pot-container {
     position: absolute;
-    top: 55%;
+    top: 65%;
     left: 50%;
     transform: translate(-50%, -50%);
     display: flex;
@@ -472,9 +472,9 @@ body {
 }
 
 .ai-toggle {
-    position: fixed;
-    top: 120px;
-    right: 20px;
+    position: absolute;
+    top: 15px;
+    right: 140px;
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -592,6 +592,10 @@ body {
         gap: 5px;
         padding: 5px;
         justify-content: center;
+        left: 5px;
+        gap: 5px;
+        padding: 5px;
+        flex-direction: column !important;
     }
 
     .chip {
@@ -659,7 +663,7 @@ body {
     }
 
     .pot-container {
-        top: 45%;
+        top: 70%;
     }
 
     .pot-chip {
@@ -682,6 +686,8 @@ body {
         top: auto;
         bottom: 200px;
         right: 10px;
+        right: 100px;
+        top: 10px;
     }
 
     .ai-toggle-button {
