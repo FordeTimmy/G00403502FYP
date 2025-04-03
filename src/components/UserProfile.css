@@ -27,19 +27,31 @@
 .game-button,
 .back-button,
 .profile-content button,
-.close-button {
+.close-button,
+.redeem-button,
+.logout-button {
     background: #FFD700;
     color: black;
-    font-size: 1.5rem;
-    padding: 15px 40px;
+    font-size: 1.2rem;
+    padding: 12px 25px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
+    transition: all 0.3s ease;
     font-weight: bold;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    width: 250px;
     text-align: center;
+}
+
+.profile-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.profile-button:disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Unified hover effect */
@@ -48,9 +60,16 @@
 .game-button:hover,
 .back-button:hover,
 .profile-content button:hover,
-.close-button:hover {
-    background: #DAA520;
+.close-button:hover,
+.redeem-button:hover,
+.logout-button:hover {
     transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.logout-button:hover,
+.redeem-button:hover {
+    background: #DAA520;
 }
 
 /* Remove any individual button color styles */
@@ -168,9 +187,12 @@
 }
 
 .profile-picture-container {
-    position: relative;
-    margin-bottom: 30px;
     text-align: center;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }
 
 .profile-picture {
@@ -179,7 +201,7 @@
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid gold;
-    margin-bottom: 10px;
+    margin: 0 auto;
     background-color: #333;
 }
 
@@ -214,9 +236,8 @@
 }
 
 .redeem-button {
-    background: linear-gradient(145deg, #2a2a2a, #3a3a3a);
-    color: #ffffff;
-    border: none;
+    background: #FFD700;
+    color: black;
     padding: 12px 24px;
     border-radius: 8px;
     font-size: 16px;
@@ -226,9 +247,13 @@
 }
 
 .redeem-button:hover {
-    background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+    background: #DAA520;
     transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+.redeem-content button {
+    width: auto;
+    min-width: 120px;
 }
 
 .redeem-content {
@@ -295,13 +320,12 @@
 }
 
 .submit-code-button {
-    background: #4a90e2;
-    color: white;
-    border: none;
+    background: #FFD700;
+    color: black;
 }
 
 .submit-code-button:hover {
-    background: #357abd;
+    background: #DAA520;
 }
 
 .close-button {
@@ -312,4 +336,107 @@
 
 .close-button:hover {
     background: #2a2a2a;
+}
+
+.profile-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative; /* For absolute positioning of logout button */
+}
+
+.username {
+    color: white;
+    font-size: 1.2rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 10px;
+}
+
+.logout-button {
+    background: #FFD700;
+    color: black;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+.logout-button:hover {
+    background: #DAA520;
+    transform: translateY(-2px);
+}
+
+.twofa-container {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.qr-container {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.qr-code {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    display: inline-block;
+}
+
+.secret-key {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.secret-key code {
+    background: #2a2a2a;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    color: #fff;
+}
+
+.twofa-verify {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.twofa-input {
+    font-size: 24px;
+    padding: 10px;
+    width: 120px;
+    text-align: center;
+    letter-spacing: 3px;
+    margin: 10px 0;
+    border: 2px solid gold;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.success-message {
+    background-color: rgba(39, 174, 96, 0.2);
+    color: #2ecc71;
+    padding: 12px;
+    border-radius: 6px;
+    margin: 10px 0;
+    border: 1px solid #27ae60;
+    text-align: center;
+    font-weight: bold;
 }
