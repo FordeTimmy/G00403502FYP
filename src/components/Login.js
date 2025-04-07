@@ -76,7 +76,7 @@ const Login = () => {
             });
 
             const data = await response.json();
-            
+
             if (response.ok) {
                 localStorage.setItem("token", data.token);
                 navigate('/profile');
@@ -92,11 +92,11 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
-        
+
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const firebaseToken = await userCredential.user.getIdToken(true);
-            
+
             const response = await fetch("http://localhost:5000/api/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -104,7 +104,7 @@ const Login = () => {
             });
 
             const data = await response.json();
-            
+
             if (!response.ok) {
                 throw new Error(data.message || "Login failed");
             }
@@ -134,9 +134,11 @@ const Login = () => {
             <div className="login-card">
                 <h1>Casino Login</h1>
                 {error && <div className="error-message">{error}</div>}
-                
+
+                // ...existing imports and code...
+
                 {twoFARequired ? (
-                    <Verify2FA 
+                    <Verify2FA
                         token={tempToken}
                         email={email}
                         onSuccess={() => navigate('/profile')}
@@ -144,27 +146,31 @@ const Login = () => {
                 ) : (
                     <form onSubmit={handleLogin}>
                         <div className="form-group">
-                            <label>Email</label>
+                            <label htmlFor="email">Email</label>
                             <input
+                                id="email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
                         </div>
+
                         <div className="form-group">
-                            <label>Password</label>
+                            <label htmlFor="password">Password</label>
                             <input
+                                id="password"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
                         </div>
+
                         <button type="submit" className="login-button">Login</button>
                     </form>
                 )}
-                
+
                 <div className="additional-options">
                     <button onClick={() => navigate('/')} className="back-button">
                         Back to Home
