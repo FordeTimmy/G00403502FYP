@@ -14,7 +14,7 @@ const Home = () => {
             <h1>Casino Blackjack</h1>
             <div className="button-container">
                 <button onClick={() => navigate('/game')} className="start-button">
-                    Start Game
+                    Quick Play
                 </button>
                 <button onClick={() => navigate('/login')} className="login-button">
                     Login

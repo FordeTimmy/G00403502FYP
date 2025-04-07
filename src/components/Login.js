@@ -2,127 +2,126 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseConfig';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, updateDoc } from 'firebase/firestore';
+import Verify2FA from './Verify2FA';
 import './Login.css';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [twoFARequired, setTwoFARequired] = useState(false);
+    const [twoFACode, setTwoFACode] = useState('');
+    const [tempToken, setTempToken] = useState('');
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // User is already signed in, redirect to profile
-                navigate('/profile');
-            }
-        });
+        let mounted = true;
 
-        // Cleanup subscription
-        return () => unsubscribe();
-    }, [navigate]);
+        const checkAuth = () => {
+            return onAuthStateChanged(auth, (user) => {
+                if (!mounted) return;
 
-    const verifyTokenWithBackend = async (firebaseToken) => {
+                if (user && !loading) {
+                    navigate('/profile');
+                }
+                setLoading(false);
+            });
+        };
+
+        const unsubscribe = checkAuth();
+        return () => {
+            mounted = false;
+            unsubscribe();
+        };
+    }, [loading, navigate]);
+
+    const verifyTokenWithBackend = async (firebaseToken, email) => {
         try {
             const response = await fetch("http://localhost:5000/api/verify-token", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ firebaseToken })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ firebaseToken, email })
             });
 
-            const data = await response.json();
-            console.log("Backend Response:", data);
-
-            if (!response.ok) {
-                throw new Error(data.message || "Token verification failed");
+            // Handle non-JSON responses
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch {
+                throw new Error(text || "Invalid server response");
             }
 
-            // Store balance in both localStorage and Firestore
-            if (data.balance) {
-                localStorage.setItem('blackjack_currency', data.balance.toString());
-                
-                const db = getFirestore();
-                const userRef = doc(db, 'users', auth.currentUser.uid);
-                await updateDoc(userRef, {
-                    currency: data.balance,
-                    lastUpdated: new Date().toISOString()
-                });
+            if (!response.ok) {
+                throw new Error(data.message || "Verification failed");
             }
 
             return data;
         } catch (error) {
-            console.error("Token verification error:", error);
+            console.error("Token verification failed:", error);
             throw error;
         }
     };
 
-    const requestCurrencyCode = async (token) => {
+    const verify2FA = async () => {
         try {
-            const response = await fetch("http://localhost:5000/api/send-currency-code", {
+            const response = await fetch("http://localhost:5000/api/verify-2fa", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                }
+                    "Authorization": `Bearer ${tempToken}`
+                },
+                body: JSON.stringify({ code: twoFACode })
             });
 
             const data = await response.json();
-            console.log("Currency Code Response:", data);
             
-            if (response.ok && data.code) {
-                // Store the currency code in localStorage for later use
-                localStorage.setItem("currency_code", data.code);
-                console.log("Currency code stored:", data.code);
+            if (response.ok) {
+                localStorage.setItem("token", data.token);
+                navigate('/profile');
+            } else {
+                setError('Invalid 2FA code');
             }
-            
-            return data;
         } catch (error) {
-            console.error("Currency code request failed:", error);
-            throw error;
+            console.error("2FA verification error:", error);
+            setError('Failed to verify 2FA code');
         }
     };
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
-
+        
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const firebaseToken = await userCredential.user.getIdToken();
+            const firebaseToken = await userCredential.user.getIdToken(true);
             
-            // Verify token and get initial balance
-            const verificationResult = await verifyTokenWithBackend(firebaseToken);
-            
-            if (verificationResult.token) {
-                localStorage.setItem("token", verificationResult.token);
-                
-                // Store initial balance
-                if (verificationResult.balance) {
-                    const db = getFirestore();
-                    const userRef = doc(db, 'users', auth.currentUser.uid);
-                    await updateDoc(userRef, {
-                        currency: verificationResult.balance,
-                        lastUpdated: new Date().toISOString()
-                    });
-                }
+            const response = await fetch("http://localhost:5000/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ firebaseToken })
+            });
 
-                try {
-                    await requestCurrencyCode(verificationResult.token);
-                    navigate('/profile');
-                } catch (currencyError) {
-                    console.error("Currency code error:", currencyError);
-                    navigate('/profile');
-                }
-            } else {
-                throw new Error("No token received from backend");
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || "Login failed");
             }
+
+            if (data.requires2FA) {
+                setTwoFARequired(true);
+                setTempToken(data.tempToken);
+                localStorage.setItem("tempToken", data.tempToken);
+                return;
+            }
+
+            // No 2FA required - store regular token
+            localStorage.setItem("token", data.token);
+            navigate('/profile');
         } catch (error) {
             console.error("Login error:", error);
-            setError(error.message || 'Authentication failed. Please try again.');
-            localStorage.removeItem("token");
+            setError(error.message);
         }
     };
 
@@ -135,27 +134,37 @@ const Login = () => {
             <div className="login-card">
                 <h1>Casino Login</h1>
                 {error && <div className="error-message">{error}</div>}
-                <form onSubmit={handleLogin}>
-                    <div className="form-group">
-                        <label>Email</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <button type="submit" className="login-button">Login</button>
-                </form>
+                
+                {twoFARequired ? (
+                    <Verify2FA 
+                        token={tempToken}
+                        email={email}
+                        onSuccess={() => navigate('/profile')}
+                    />
+                ) : (
+                    <form onSubmit={handleLogin}>
+                        <div className="form-group">
+                            <label>Email</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Password</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <button type="submit" className="login-button">Login</button>
+                    </form>
+                )}
+                
                 <div className="additional-options">
                     <button onClick={() => navigate('/')} className="back-button">
                         Back to Home

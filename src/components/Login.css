@@ -181,3 +181,20 @@
         transform: scale(0.8);
     }
 }
+
+.twofa-verify {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.twofa-input {
+    width: 120px !important;
+    font-size: 24px;
+    padding: 10px;
+    text-align: center;
+    letter-spacing: 3px;
+    margin: 10px auto;
+    border: 2px solid gold;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.9);
+}
