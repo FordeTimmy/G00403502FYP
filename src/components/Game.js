@@ -132,6 +132,8 @@ const Game = () => {
     const [profilePicture, setProfilePicture] = useState(null);
     const [showNextHandButton, setShowNextHandButton] = useState(false);
     const audioRef = useRef(null); // Add audioRef with other state declarations
+    const [gameOver, setGameOver] = useState(false);
+    const [resultMessage, setResultMessage] = useState('');
     
     // Add debug logging for chip images
     useEffect(() => {
@@ -149,8 +151,8 @@ const Game = () => {
 
     // Add new useEffect for music
     useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = volume / 100; // Convert percentage to decimal
+        if (audioRef.current && process.env.NODE_ENV !== 'test') {
+            audioRef.current.volume = volume / 100;
             audioRef.current.play().catch(error => {
                 console.log("Audio autoplay failed:", error);
             });
@@ -158,7 +160,7 @@ const Game = () => {
         }
 
         return () => {
-            if (audioRef.current) {
+            if (audioRef.current && process.env.NODE_ENV !== 'test') {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0;
             }
@@ -506,6 +508,26 @@ const endRound = (status) => {
 
     // Show the Next Hand button instead of auto-starting
     setShowNextHandButton(true);
+    
+    // Add data-testid to the result message
+    const resultMessage = (
+        <div data-testid="result-message" className="result-message">
+            {status}
+        </div>
+    );
+    setGameStatus(resultMessage);
+    setGameOver(true);
+    setResultMessage(status);
+    setGameStatus('');
+    
+    if (status.toLowerCase().includes('win')) {
+        setCurrency(prev => prev + (bet * 2));
+    } else if (status.toLowerCase().includes('push')) {
+        setCurrency(prev => prev + bet);
+    }
+    // No currency update needed for losses
+    
+    updateUserStats(status.toLowerCase().includes('win') ? 'win' : 'loss', bet);
 };
     
 
@@ -777,6 +799,16 @@ const endRound = (status) => {
         }
     };
 
+    const resetGame = () => {
+        setGameOver(false);
+        setResultMessage('');
+        setPlayerHand([]);
+        setDealerHand([]);
+        setBet(0);
+        setCanBet(true);
+        setDeck(createDeck());
+    };
+
     return (
         <div className="casino-table">
             <audio ref={audioRef} src={backgroundMusic} />
@@ -836,7 +868,7 @@ const endRound = (status) => {
                     <div key={index} className="chip-container">
                         <img 
                             src={getChipImage(chip.value)}
-                            alt={`Bet ${chip.label}`}
+                            alt={`Bet ${chip.value}`}
                             className={`chip ${(!canBet || isPaused) ? 'disabled' : ''}`}
                             onClick={() => canBet && !isPaused && placeBet(parseInt(chip.value))}
                         />
@@ -862,6 +894,7 @@ const endRound = (status) => {
                         index === 0 ? (
                             <img 
                                 key={index}
+                                data-testid="dealer-card"
                                 src={getCardImage(card)}
                                 alt={`${card.value}${card.suit}`}
                                 className="card"
@@ -870,6 +903,7 @@ const endRound = (status) => {
                             gameStatus === 'Playing...' ? (
                                 <img 
                                     key={index}
+                                    data-testid="dealer-card"
                                     src="./images/cards/cardback.png"
                                     alt="Hidden card"
                                     className="card"
@@ -877,6 +911,7 @@ const endRound = (status) => {
                             ) : (
                                 <img 
                                     key={index}
+                                    data-testid="dealer-card"
                                     src={getCardImage(card)}
                                     alt={`${card.value}${card.suit}`}
                                     className="card"
@@ -907,6 +942,7 @@ const endRound = (status) => {
                             {playerHand1.map((card, index) => (
                                 <img 
                                     key={index}
+                                    data-testid="player-card"
                                     src={getCardImage(card)}
                                     alt={`${card.value}${card.suit}`}
                                     className="card"
@@ -931,6 +967,7 @@ const endRound = (status) => {
                             {playerHand2.map((card, index) => (
                                 <img 
                                     key={index}
+                                    data-testid="player-card"
                                     src={getCardImage(card)}
                                     alt={`${card.value}${card.suit}`}
                                     className="card"
@@ -940,7 +977,7 @@ const endRound = (status) => {
                     </div>
                 </>
             ) : (
-                <div className="player-hand">
+                <div className="player-hand" data-testid="player-hand">
                     <div className="player-profile">
                         <img 
                             src={profilePicture || defaultProfilePic} 
@@ -957,6 +994,7 @@ const endRound = (status) => {
                         {playerHand.map((card, index) => (
                             <img 
                                 key={index}
+                                data-testid="player-card"
                                 src={getCardImage(card)}
                                 alt={`${card.value}${card.suit}`}
                                 className="card"
@@ -988,8 +1026,9 @@ const endRound = (status) => {
                 <button 
                     className="next-hand-button"
                     onClick={handleNextHand}
+                    aria-label="Play Again"
                 >
-                    Deal Next Hand
+                    Play Again
                 </button>
             )}
 
@@ -1017,7 +1056,16 @@ const endRound = (status) => {
             {/* Move status message to right side */}
             {gameStatus && (
                 <div className="game-status">
-                    {gameStatus}
+                    {typeof gameStatus === 'string' ? gameStatus : gameStatus}
+                </div>
+            )}
+
+            {gameOver && (
+                <div data-testid="result-message" className="result-section">
+                    <h2>{resultMessage}</h2>
+                    <button onClick={resetGame} aria-label="Play Again">
+                        Play Again
+                    </button>
                 </div>
             )}
         </div>

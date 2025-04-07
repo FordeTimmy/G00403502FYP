@@ -1,3 +1,7 @@
+// Mock audio play globally
+window.HTMLMediaElement.prototype.play = jest.fn().mockImplementation(() => Promise.resolve());
+window.HTMLMediaElement.prototype.pause = jest.fn();
+
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import Login from './Login';
