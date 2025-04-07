@@ -569,10 +569,12 @@ const endRound = (status) => {
             setDeck(newDeck);
 
             const playerTotal = calculateHandValue(newPlayerHand);
-            if (playerTotal > 21) {
-                endRound('Player busts! Dealer wins.'); 
+            if (playerTotal === 21) {
+                endRound('Blackjack! Player wins!');
+            } else if (playerTotal > 21) {
+                endRound('Player busts! Dealer wins.');
             } else {
-                setGameStatus('Playing...'); // Keep playing if not busting
+                setGameStatus('Playing...'); // Keep playing if not busting or 21
             }
         }
         
