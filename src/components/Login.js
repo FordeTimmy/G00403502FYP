@@ -121,7 +121,7 @@ const Login = () => {
             navigate('/profile');
         } catch (error) {
             console.error("Login error:", error);
-            setError(error.message);
+            setError("Invalid email or password");
         }
     };
 
@@ -133,9 +133,11 @@ const Login = () => {
         <div className="login-container">
             <div className="login-card">
                 <h1>Casino Login</h1>
-                {error && <div className="error-message">{error}</div>}
-
-                // ...existing imports and code...
+                {error && (
+                    <div data-testid="error-msg" role="alert" className="error-message">
+                        {error}
+                    </div>
+                )}
 
                 {twoFARequired ? (
                     <Verify2FA
