@@ -10,7 +10,6 @@ import PlayerStatsChart from './PlayerStatsChart';
 import { simulateGames } from '../utils/simulateGames';
 import defaultProfilePic from '../assets/defaultProfilePic.jpg';
 import { signOut } from 'firebase/auth';
-import Enable2FA from './Enable2FA';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const getUserStorageKey = (userId) => `profilePicture_${userId}`;
@@ -26,7 +25,6 @@ const UserProfile = () => {
     const [redeemCode, setRedeemCode] = useState('');
     const [redeemMessage, setRedeemMessage] = useState({ text: '', type: '' });
     const [username, setUsername] = useState('');
-    const [tempToken, setTempToken] = useState(null);
     const [isInitializing, setIsInitializing] = useState(true);
     const [initError, setInitError] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -189,7 +187,6 @@ const UserProfile = () => {
                             <div className="profile-content">
                                 <h2>User Profile</h2>
                                 <p>Email: {auth.currentUser?.email}</p>
-                                <Enable2FA tempToken={tempToken} />
                                 <button onClick={() => setShowProfile(false)}>Close</button>
                             </div>
                         </div>
