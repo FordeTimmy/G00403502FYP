@@ -11,7 +11,7 @@ const Home = () => {
 
     return (
         <div className={`home-container ${isDarkMode ? 'dark-mode' : ''}`}>
-            <h1>Casino Blackjack</h1>
+            <h1>Ace Up</h1>
             <div className="button-container">
                 <button onClick={() => navigate('/game')} className="start-button">
                     Quick Play
