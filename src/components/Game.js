@@ -59,31 +59,34 @@ const createDeck = () => {
     return deck.sort(() => Math.random() - 0.5); // Shuffle the deck randomly 
 };
 
-// Function to get card value
+// Update getCardValue to handle undefined/null cards
 const getCardValue = (card) => {
-    if (['J', 'Q', 'K'].includes(card.value)) return 10; // Face cards are worth 10
-    if (card.value === 'A') return 11; // Ace is worth 11 by default
+    if (!card) return 0; // Return 0 if card is undefined or null
+    if (['J', 'Q', 'K'].includes(card.value)) return 10;
+    if (card.value === 'A') return 11;
     return parseInt(card.value);
 };
 
-// Function to calculate hand total
+// Update calculateHandValue to handle empty hands
 const calculateHandValue = (hand) => {
+    if (!hand || hand.length === 0) return 0; // Return 0 for empty hands
+    
     let total = 0;
-    let aces = 0; // Count the number of Aces in the hand
+    let aces = 0;
 
-     // Sum up the values of all cards
     hand.forEach(card => {
-        total += getCardValue(card);
-        if (card.value === 'A') aces += 1; // Track the number of Aces
+        if (card) { // Only process defined cards
+            total += getCardValue(card);
+            if (card.value === 'A') aces += 1;
+        }
     });
 
-    // Adjust Aces to avoid busting (each Ace can be worth 1 instead of 11)
     while (total > 21 && aces > 0) {
-        total -= 10; // Subtract 10 for each Ace
-        aces -= 1; // Reduce the Ace count
+        total -= 10;
+        aces -= 1;
     }
 
-    return total; // Return the total value of the hand
+    return total;
 };
 
 const updateUserStats = async (gameResult, betAmount = 0) => {
@@ -113,7 +116,7 @@ const updateUserStats = async (gameResult, betAmount = 0) => {
     if (auth.currentUser) {
         try {
             const db = getFirestore();
-            const userRef = doc(db, 'users', auth.currentUser.uid);
+            const userRef = doc(db, 'users', auth.currentUser.uid); // Changed from email to uid
             await updateDoc(userRef, newStats);
             console.log('Stats updated in Firebase');
         } catch (error) {
@@ -341,7 +344,7 @@ const Game = () => {
             if (auth.currentUser) {
                 try {
                     const db = getFirestore();
-                    const userRef = doc(db, 'users', auth.currentUser.uid);
+                    const userRef = doc(db, 'users', auth.currentUser.uid); // Changed from email to uid
                     const userDoc = await getDoc(userRef);
                     
                     if (userDoc.exists()) {
@@ -469,67 +472,53 @@ const Game = () => {
 
     // Function to handle the end of a round
 const endRound = (status) => {
-    console.log("endRound called with status:", status);  // Debugging log
-    setGameStatus(`${status}`); // Remove the "New hand starting" message
-    setIsDoubleDownAllowed(false); // Disable double down after the round ends
+    console.log("endRound called with status:", status);
+    
+    // Clear any existing messages
+    setGameStatus('');
+    setIsDoubleDownAllowed(false);
 
-    // Improve result determination logic
     let result;
     let reward;
     if (status.toLowerCase().includes('player wins')) {
-        setCurrency(prev => prev + (bet * 2)); // Return original bet plus winnings
+        setCurrency(prev => prev + (bet * 2));
         result = 'win';
         reward = 10;
     } else if (status.toLowerCase().includes('push')) {
-        setCurrency(prev => prev + bet); // Return original bet on push
+        setCurrency(prev => prev + bet);
         result = 'push';
         reward = 0;
     } else {
-        result = 'loss';  // Consider everything else as a loss (dealer wins, player busts)
+        result = 'loss';
         reward = -10;
     }
 
-    // Get the current state and update Q-value
+    // Update Q-values
     const currentState = `${calculateHandValue(playerHand)}-${dealerHand[0].value}-${canSplit() ? '1' : '0'}-${isDoubleDownAllowed ? '1' : '0'}`;
     const nextState = 'end';
-
     if (lastAction) {
         updateQValue(currentState, lastAction, reward, nextState);
-        console.log('Updated Q-table:', getQTable());
     }
 
-    // Reset lastAction
+    // Reset game states
     setLastAction(null);
-
-    // Only update stats for wins and losses, not pushes
     if (result !== 'push') {
         updateUserStats(result, bet);
     }
 
-    // Show the Next Hand button instead of auto-starting
     setShowNextHandButton(true);
-    
-    // Add data-testid to the result message
-    const resultMessage = (
-        <div data-testid="result-message" className="result-message">
-            {status}
-        </div>
-    );
-    setGameStatus(resultMessage);
     setGameOver(true);
     setResultMessage(status);
-    setGameStatus('');
-    
-    if (status.toLowerCase().includes('win')) {
-        setCurrency(prev => prev + (bet * 2));
-    } else if (status.toLowerCase().includes('push')) {
-        setCurrency(prev => prev + bet);
-    }
-    // No currency update needed for losses
-    
-    updateUserStats(status.toLowerCase().includes('win') ? 'win' : 'loss', bet);
+
+    // Show result message temporarily
+    const resultMessageTimeout = setTimeout(() => {
+        setGameOver(false);
+        setResultMessage('');
+    }, 3000); // Message will disappear after 3 seconds
+
+    // Cleanup timeout on component unmount
+    return () => clearTimeout(resultMessageTimeout);
 };
-    
 
     // Function to start a new hand automatically
     const startNewHand = () => {
@@ -809,14 +798,40 @@ const endRound = (status) => {
         setDeck(createDeck());
     };
 
+    // Add safe card rendering helper
+    const renderCard = (card, index, isDealer = false) => {
+        if (!card) return null;
+        
+        if (isDealer && index > 0 && gameStatus === 'Playing...') {
+            return (
+                <img 
+                    key={index}
+                    data-testid="dealer-card"
+                    src="./images/cards/cardback.png"
+                    alt="Hidden card"
+                    className="card"
+                />
+            );
+        }
+
+        return (
+            <img 
+                key={index}
+                data-testid={isDealer ? "dealer-card" : "player-card"}
+                src={getCardImage(card)}
+                alt={`${card.value}${card.suit}`}
+                className="card"
+            />
+        );
+    };
+
     return (
         <div className="casino-table">
             <audio ref={audioRef} src={backgroundMusic} />
             
-            {/* Add music control button in the header */}
             <div className="game-header">
                 <div className="header-content">
-                    <h1 className="game-title">Casino Blackjack</h1>
+                    <h1 className="game-title">Ace Up</h1>
                     <div className="header-buttons">
                         <button 
                             className={`music-button ${audioRef.current?.paused ? 'muted' : ''}`}
@@ -887,38 +902,12 @@ const endRound = (status) => {
             {/* Updated Dealer's hand */}
             <div className="dealer-hand">
                 <h3 className="text-white">
-                    Dealer's Hand ({gameStatus === 'Playing...' ? getCardValue(dealerHand[0]) : calculateHandValue(dealerHand)})
+                    Dealer's Hand ({gameStatus === 'Playing...' && dealerHand[0] ? 
+                        getCardValue(dealerHand[0]) : 
+                        calculateHandValue(dealerHand)})
                 </h3>
                 <div className="flex gap-2">
-                    {dealerHand.map((card, index) => (
-                        index === 0 ? (
-                            <img 
-                                key={index}
-                                data-testid="dealer-card"
-                                src={getCardImage(card)}
-                                alt={`${card.value}${card.suit}`}
-                                className="card"
-                            />
-                        ) : (
-                            gameStatus === 'Playing...' ? (
-                                <img 
-                                    key={index}
-                                    data-testid="dealer-card"
-                                    src="./images/cards/cardback.png"
-                                    alt="Hidden card"
-                                    className="card"
-                                />
-                            ) : (
-                                <img 
-                                    key={index}
-                                    data-testid="dealer-card"
-                                    src={getCardImage(card)}
-                                    alt={`${card.value}${card.suit}`}
-                                    className="card"
-                                />
-                            )
-                        )
-                    ))}
+                    {dealerHand.map((card, index) => renderCard(card, index, true))}
                 </div>
             </div>
 
@@ -939,15 +928,7 @@ const endRound = (status) => {
                         </div>
                         <h3 className="text-white">Hand 1 ({calculateHandValue(playerHand1)})</h3>
                         <div className="flex gap-2">
-                            {playerHand1.map((card, index) => (
-                                <img 
-                                    key={index}
-                                    data-testid="player-card"
-                                    src={getCardImage(card)}
-                                    alt={`${card.value}${card.suit}`}
-                                    className="card"
-                                />
-                            ))}
+                            {playerHand1.map((card, index) => renderCard(card, index, false))}
                         </div>
                     </div>
                     <div className="player-hand">
@@ -964,15 +945,7 @@ const endRound = (status) => {
                         </div>
                         <h3 className="text-white">Hand 2 ({calculateHandValue(playerHand2)})</h3>
                         <div className="flex gap-2">
-                            {playerHand2.map((card, index) => (
-                                <img 
-                                    key={index}
-                                    data-testid="player-card"
-                                    src={getCardImage(card)}
-                                    alt={`${card.value}${card.suit}`}
-                                    className="card"
-                                />
-                            ))}
+                            {playerHand2.map((card, index) => renderCard(card, index, false))}
                         </div>
                     </div>
                 </>
@@ -991,15 +964,7 @@ const endRound = (status) => {
                     </div>
                     <h3 className="text-white">Player's Hand ({calculateHandValue(playerHand)})</h3>
                     <div className="flex gap-2">
-                        {playerHand.map((card, index) => (
-                            <img 
-                                key={index}
-                                data-testid="player-card"
-                                src={getCardImage(card)}
-                                alt={`${card.value}${card.suit}`}
-                                className="card"
-                            />
-                        ))}
+                        {playerHand.map((card, index) => renderCard(card, index, false))}
                     </div>
                 </div>
             )}
@@ -1061,11 +1026,8 @@ const endRound = (status) => {
             )}
 
             {gameOver && (
-                <div data-testid="result-message" className="result-section">
+                <div className="result-message-banner" style={{ animation: 'fadeInOut 3s forwards' }}>
                     <h2>{resultMessage}</h2>
-                    <button onClick={resetGame} aria-label="Play Again">
-                        Play Again
-                    </button>
                 </div>
             )}
         </div>
