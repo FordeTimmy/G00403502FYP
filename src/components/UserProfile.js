@@ -34,7 +34,7 @@ const UserProfile = () => {
         try {
             if (auth.currentUser) {
                 const db = getFirestore();
-                const userRef = doc(db, 'users', auth.currentUser.email); // <- email used as doc ID
+                const userRef = doc(db, 'users', auth.currentUser.uid); // Changed from email to uid
                 const docSnap = await getDoc(userRef);
 
                 if (docSnap.exists() && docSnap.data().profilePicture) {
@@ -56,7 +56,7 @@ const UserProfile = () => {
     const loadUserProfile = async () => {
         if (auth.currentUser) {
             const db = getFirestore();
-            const userRef = doc(db, 'users', auth.currentUser.email); // <- email used again
+            const userRef = doc(db, 'users', auth.currentUser.uid); // Changed from email to uid
             const docSnap = await getDoc(userRef);
             if (docSnap.exists()) {
                 setUsername(docSnap.data().username || auth.currentUser.email.split('@')[0]);
@@ -113,6 +113,54 @@ const UserProfile = () => {
             mounted = false;
         };
     }, [user]);
+
+    // Update loadPlayerStats to ensure we get valid data
+    const loadPlayerStats = async () => {
+        try {
+            if (auth.currentUser) {
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid); // Changed from email to uid
+                const docSnap = await getDoc(userRef);
+                
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    setStats({
+                        handsWon: userData.handsWon || 0,
+                        handsLost: userData.handsLost || 0,
+                        totalAmountWon: userData.totalAmountWon || 0,
+                        totalAmountLost: userData.totalAmountLost || 0,
+                        gamesPlayed: userData.gamesPlayed || 0
+                    });
+                } else {
+                    // Initialize with default values if no data exists
+                    setStats({
+                        handsWon: 0,
+                        handsLost: 0,
+                        totalAmountWon: 0,
+                        totalAmountLost: 0,
+                        gamesPlayed: 0
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error);
+            // Set default values on error
+            setStats({
+                handsWon: 0,
+                handsLost: 0,
+                totalAmountWon: 0,
+                totalAmountLost: 0,
+                gamesPlayed: 0
+            });
+        }
+    };
+
+    // Add useEffect to load stats when showStats changes
+    useEffect(() => {
+        if (showStats) {
+            loadPlayerStats();
+        }
+    }, [showStats]);
 
     // Early return for initial loading
     if (loading) {
@@ -191,6 +239,21 @@ const UserProfile = () => {
                             </div>
                         </div>
                     )}
+
+{showStats && (
+  <div className="profile-modal">
+    <div className="profile-content">
+      <h2>Player Statistics</h2>
+      {stats ? (
+        <PlayerStatsChart stats={stats} />
+      ) : (
+        <p>Loading statistics...</p>
+      )}
+      <button onClick={() => setShowStats(false)}>Close</button>
+    </div>
+  </div>
+)}
+
                 </>
             )}
         </div>

@@ -3,8 +3,9 @@ import { Chart as ChartJS } from 'chart.js/auto';
 import { Pie } from 'react-chartjs-2';
 
 const PlayerStatsChart = ({ stats }) => {
-    if (!stats || !stats.gamesPlayed) {
-        return <p>Not enough data to generate charts.</p>;
+    // Early return with message if stats are invalid or all zeros
+    if (!stats || (stats.handsWon === 0 && stats.handsLost === 0)) {
+        return <p>Play some games to see your statistics!</p>;
     }
 
     const winRateData = {
@@ -36,18 +37,40 @@ const PlayerStatsChart = ({ stats }) => {
         }
     };
 
+    // Only render charts if there's actual data
     return (
-        <div className="charts-container">
-            <div className="chart-item">
-                <h3>Win/Loss Ratio</h3>
-                <div style={{ height: '300px', position: 'relative' }}>
-                    <Pie data={winRateData} options={options} />
-                </div>
+        <div className="charts-container" style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '20px',
+            width: '100%',
+            maxWidth: '1000px',
+            margin: '0 auto'
+        }}>
+            <div className="stats-summary" style={{
+                textAlign: 'center',
+                marginBottom: '20px'
+            }}>
+                <p>Games Played: {stats.gamesPlayed}</p>
+                <p>Win Rate: {((stats.handsWon / (stats.handsWon + stats.handsLost)) * 100 || 0).toFixed(1)}%</p>
             </div>
-            <div className="chart-item">
-                <h3>Money Won vs Lost</h3>
-                <div style={{ height: '300px', position: 'relative' }}>
-                    <Pie data={moneyData} options={options} />
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '40px',
+                flexWrap: 'wrap'
+            }}>
+                <div className="chart-item" style={{ flex: '1', minWidth: '300px', maxWidth: '450px' }}>
+                    <h3 style={{ textAlign: 'center' }}>Win/Loss Ratio</h3>
+                    <div style={{ height: '300px', position: 'relative' }}>
+                        <Pie data={winRateData} options={options} />
+                    </div>
+                </div>
+                <div className="chart-item" style={{ flex: '1', minWidth: '300px', maxWidth: '450px' }}>
+                    <h3 style={{ textAlign: 'center' }}>Money Won vs Lost</h3>
+                    <div style={{ height: '300px', position: 'relative' }}>
+                        <Pie data={moneyData} options={options} />
+                    </div>
                 </div>
             </div>
         </div>

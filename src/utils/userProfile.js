@@ -3,7 +3,7 @@ import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 export const createOrUpdateUser = async (uid, email, data = {}) => {
     try {
         const db = getFirestore();
-        const userRef = doc(db, "users", uid);
+        const userRef = doc(db, "users", uid); // Make sure we're using UID
         
         await setDoc(userRef, {
             email,
@@ -20,7 +20,7 @@ export const createOrUpdateUser = async (uid, email, data = {}) => {
 export const getUserProfile = async (uid) => {
     try {
         const db = getFirestore();
-        const userRef = doc(db, "users", uid);
+        const userRef = doc(db, "users", uid); // Make sure we're using UID
         const docSnap = await getDoc(userRef);
         
         if (docSnap.exists()) {
