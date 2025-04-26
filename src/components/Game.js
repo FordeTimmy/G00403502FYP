@@ -366,22 +366,86 @@ const Game = () => {
         loadUserCurrency();
     }, []); // Run once when component mounts
 
+    // Initialize currency based on auth state
+    useEffect(() => {
+            // Only set initial currency when component first mounts
+        if (!auth.currentUser) {
+            setCurrency(prevCurrency => {
+                // Only set to 1000 if it hasn't been initialized yet
+                if (prevCurrency === undefined) return 1000;
+                return prevCurrency;
+            });
+            localStorage.removeItem('blackjack_currency');
+            return;
+        }
+
+        // Load currency for logged-in users
+        const loadUserCurrency = async () => {
+            try {
+                const db = getFirestore();
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                
+                if (userDoc.exists()) {
+                    setCurrency(userDoc.data().currency || 1000);
+                }
+            } catch (error) {
+                console.error('Error loading currency:', error);
+                setCurrency(1000);
+            }
+        };
+
+        loadUserCurrency();
+    }, []);
+
+    // Initialize currency only once when component mounts
+    useEffect(() => {
+        if (!auth.currentUser) {
+            // For quickplay, always start with 1000 and clear any stored values
+            setCurrency(1000);
+            localStorage.removeItem('blackjack_currency');
+            localStorage.removeItem('blackjackGameState');
+        } else {
+            // For logged-in users, load from Firestore
+            const loadUserCurrency = async () => {
+                try {
+                    const db = getFirestore();
+                    const userRef = doc(db, 'users', auth.currentUser.uid);
+                    const userDoc = await getDoc(userRef);
+                    
+                    if (userDoc.exists()) {
+                        setCurrency(userDoc.data().currency || 1000);
+                    }
+                } catch (error) {
+                    console.error('Error loading currency:', error);
+                    setCurrency(1000);
+                }
+            };
+            loadUserCurrency();
+        }
+    }, [auth.currentUser]); // Only run when auth state changes
+
+    // Remove or modify these existing useEffects that might be interfering
+    useEffect(() => {
+        if (!auth.currentUser) return; // Skip for quickplay
+        const loadSavedGame = async () => {
+            // ...existing loadSavedGame code...
+        };
+        loadSavedGame();
+    }, []);
+
     const saveGame = async () => {
+        if (!auth.currentUser) {
+            console.log('Quick play mode - game not saved');
+            return;
+        }
+
         const gameState = {
             currency: currency,
             bet: bet,
             gameStatus: gameStatus,
             lastSaved: new Date().toISOString()
         };
-
-        // Always save to localStorage first
-        saveToLocalStorage(LOCAL_STORAGE_KEYS.GAME_STATE, gameState);
-        localStorage.setItem('blackjack_currency', currency.toString());
-
-        if (!auth.currentUser) {
-            alert('Game saved locally only (not logged in)');
-            return;
-        }
 
         try {
             const db = getFirestore();
@@ -395,12 +459,13 @@ const Game = () => {
             alert('Game saved successfully!');
         } catch (error) {
             handleFirebaseError(error);
-            alert('Game saved locally only');
         }
     };
 
     // Add auto-save when currency changes
     useEffect(() => {
+        if (!auth.currentUser) return; // Skip auto-save for quick play
+
         const autoSave = async () => {
             if (currency !== 1000) { // Only save if currency has changed from initial value
                 const gameState = {
@@ -530,6 +595,7 @@ const endRound = (status) => {
         setDealerHand([]);
         setDeck(createDeck());
         setActiveBet(null);
+        // Remove the currency reset, let it persist during the session
     };
 
     // Function to handle pause/resume
@@ -750,8 +816,10 @@ const endRound = (status) => {
         if (auth.currentUser) {
             await saveBalance();
             navigate('/');
-        } else if (window.confirm('Are you sure you want to return to the home page? Current game progress will be lost.')) {
-            navigate('/');
+        } else {
+            if (window.confirm('Are you sure you want to return to the home page? Your progress will be lost.')) {
+                navigate('/');
+            }
         }
     };
 
