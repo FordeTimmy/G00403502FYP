@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserProfile.css';
 import { auth } from '../firebaseConfig';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, increment, arrayUnion, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import PlayerStatsChart from './PlayerStatsChart';
 import { simulateGames } from '../utils/simulateGames';
@@ -29,6 +29,8 @@ const UserProfile = () => {
     const [initError, setInitError] = useState(null);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
+    const [redeemError, setRedeemError] = useState('');
+    const [redeemSuccess, setRedeemSuccess] = useState('');
 
     const loadProfilePicture = async () => {
         try {
@@ -162,6 +164,28 @@ const UserProfile = () => {
         }
     }, [showStats]);
 
+    // Add this function to refresh user data
+    const refreshUserData = async () => {
+        try {
+            const db = getFirestore();
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            const docSnap = await getDoc(userRef);
+            
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                setStats({
+                    handsWon: userData.handsWon || 0,
+                    handsLost: userData.handsLost || 0,
+                    totalAmountWon: userData.totalAmountWon || 0,
+                    totalAmountLost: userData.totalAmountLost || 0,
+                    gamesPlayed: userData.gamesPlayed || 0
+                });
+            }
+        } catch (error) {
+            console.error('Error refreshing user data:', error);
+        }
+    };
+
     // Early return for initial loading
     if (loading) {
         console.log('Showing initial loading');
@@ -196,6 +220,58 @@ const UserProfile = () => {
             navigate('/login');
         } catch (error) {
             console.error("Logout error:", error);
+        }
+    };
+
+    const handleRedeemCode = async () => {
+        setRedeemError('');
+        setRedeemSuccess('');
+
+        if (!redeemCode.trim()) {
+            setRedeemError('Please enter a code');
+            return;
+        }
+
+        try {
+            const db = getFirestore();
+            const codeQuery = redeemCode.trim().toUpperCase();
+
+            // Search for matching code that is not claimed
+            const codesRef = collection(db, 'currency_codes');
+            const q = query(
+                codesRef,
+                where('code', '==', codeQuery),
+                where('claimed', '==', false),
+                where('email', '==', auth.currentUser.email),
+                limit(1)
+            );
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                setRedeemError('Invalid or already claimed code.');
+                return;
+            }
+
+            const codeDoc = querySnapshot.docs[0];
+            const { currencyAmount } = codeDoc.data();
+
+            // Update user balance and mark code as claimed
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await updateDoc(userRef, {
+                currency: increment(currencyAmount),
+            });
+
+            await updateDoc(doc(db, 'currency_codes', codeDoc.id), {
+                claimed: true,
+            });
+
+            setRedeemSuccess(`Successfully redeemed ${currencyAmount} coins!`);
+            setRedeemCode('');
+            await refreshUserData();
+
+        } catch (error) {
+            console.error('Error redeeming code:', error);
+            setRedeemError('Failed to redeem code. Please try again.');
         }
     };
 
@@ -253,6 +329,30 @@ const UserProfile = () => {
     </div>
   </div>
 )}
+
+{showRedeemModal && (
+    <div className="profile-modal">
+        <div className="profile-content">
+            <h2>Redeem Code</h2>
+            <div className="redeem-input-group">
+                <input
+                    type="text"
+                    value={redeemCode}
+                    onChange={(e) => setRedeemCode(e.target.value)}
+                    placeholder="Enter your code"
+                    className="redeem-input"
+                />
+                <button onClick={handleRedeemCode} className="redeem-button">
+                    Redeem
+                </button>
+            </div>
+            {redeemError && <div className="error-message">{redeemError}</div>}
+            {redeemSuccess && <div className="success-message">{redeemSuccess}</div>}
+            <button onClick={() => setShowRedeemModal(false)} className="close-button">Close</button>
+        </div>
+    </div>
+)}
+
 
                 </>
             )}
