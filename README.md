@@ -42,5 +42,8 @@ VITE_FIREBASE_PROJECT_ID=
 VITE_FIREBASE_APP_ID=
 Enable Email/Password sign-in in Firebase Authentication.
 
-Testing
+### Testing
 npm test
+
+### Deployed game
+https://ace-up.vercel.app/game
